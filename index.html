@@ -36,6 +36,64 @@
     .reveal .slides section {
       text-align: left;
     }
+
+    /* Base Slide Typography */
+    .reveal,
+    .reveal .slides,
+    .reveal .slides section,
+    .reveal .slides section p,
+    .reveal .slides section li,
+    .reveal .slides section span,
+    .reveal .slides section a {
+      font-family: var(--body-font, 'Inter', sans-serif) !important;
+    }
+
+    /* Slide Body Text Sizing */
+    .reveal .slides section p,
+    .reveal .slides section li,
+    .reveal .slides section span,
+    .reveal .slides section a {
+      font-size: 0.8em;
+      line-height: 1.4 !important;
+    }
+
+    /* Slide Headings */
+    .reveal .slides section h1,
+    .reveal .slides section h2,
+    .reveal .slides section h3,
+    .reveal .slides section h4,
+    .reveal .slides section h5,
+    .reveal .slides section h6 {
+      font-family: var(--title-font, 'Montserrat', sans-serif) !important;
+      font-weight: 800 !important;
+      text-transform: none !important;
+    }
+
+    /* Mejora visual para los tags <mark> en Reveal.js */
+    .reveal mark {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    /* Clases de tamaño para Reveal.js */
+    .reveal .text-xs {
+      font-size: 0.55em !important;
+    }
+
+    .reveal .text-sm {
+      font-size: 0.8em !important;
+    }
+
+    .reveal .text-lg {
+      font-size: 1.25em !important;
+    }
+
+    .reveal .text-xl {
+      font-size: 1.6em !important;
+    }
   </style>
 </head>
 
@@ -55,16 +113,15 @@
   <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/markdown/markdown.js"></script>
 
   <script>
-    // CONFIGURACIÓN DE SUPABASE (Nombre de variable corregido)
-    const SUPABASE_URL = 'https://jomqgtqtwgaxdgwywhtg.supabase.co'
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvbXFndHF0d2dheGRnd3l3aHRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MTkyNDgsImV4cCI6MjA5ODQ5NTI0OH0.aTKt1oLBpyMMNL0S2Lcv3C1ZyOkmDcxNP2J2BgxluBg'
+    const SUPABASE_URL = 'https://jomqgtqtwgaxdgwywhtg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvbXFndHF0d2dheGRnd3l3aHRnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MTkyNDgsImV4cCI6MjA5ODQ5NTI0OH0.aTKt1oLBpyMMNL0S2Lcv3C1ZyOkmDcxNP2J2BgxluBg';
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const {createApp, ref, onMounted, nextTick} = Vue;
-    const {createVuetify} = Vuetify;
+    const { createApp, ref, onMounted, nextTick } = Vue;
+    const { createVuetify } = Vuetify;
 
-    const vuetify = createVuetify({theme: {defaultTheme: 'dark'}});
+    const vuetify = createVuetify({ theme: { defaultTheme: 'dark' } });
 
     const App = {
       template: `
@@ -72,9 +129,7 @@
         <!-- Header con Campo de Título y Botón Guardar -->
         <v-app-bar color="surface-variant" density="compact" elevation="2">
             
-          
-          
-            <v-app-bar-title class="font-weight-bold d-flex align-center">
+          <v-app-bar-title class="font-weight-bold d-flex align-center">
             <v-icon icon="mdi-presentation-play" class="mr-2" color="primary"></v-icon>
             Editor Reveal
           </v-app-bar-title>
@@ -126,12 +181,10 @@
           Delete
           </v-btn>
 
-          
         </v-app-bar>
 
         <v-main class="bg-grey-darken-4">
 
-            
           <v-container fluid class="fill-height align-start">
             <v-row class="fill-height">
               
@@ -151,10 +204,10 @@
       :loading="subiendoImagen"
     ></v-btn>
 
-  <input type="file" ref="fileInput" accept="image/*" class="d-none" @change="subirImagenSupabase">
+    <input type="file" ref="fileInput" accept="image/*" class="d-none" @change="subirImagenSupabase">
 
     <!-- Botón Abrir Galería -->
-<v-btn color="purple-lighten-1" icon="mdi-folder-multiple-image" title="Galería de Imágenes" @click="abrirGaleriaMedios"></v-btn>
+    <v-btn color="purple-lighten-1" icon="mdi-folder-multiple-image" title="Galería de Imágenes" @click="abrirGaleriaMedios"></v-btn>
 
   <!-- Modal / Diálogo de Galería de Medios -->
 <v-dialog v-model="dialogGaleria" max-width="800">
@@ -170,9 +223,7 @@
       <v-row v-if="imagenesGaleria.length > 0">
         <v-col v-for="img in imagenesGaleria" :key="img.name" cols="6" sm="4" md="3">
           <v-card border hover class="pa-2 text-center position-relative">
-            <!-- Botón de Borrar en la esquina de cada imagen -->
-           
-             <v-btn
+            <v-btn
               icon="mdi-delete"
               color="error"
               size="x-small"
@@ -236,36 +287,46 @@
           @click="dialogYouTube = true"
         ></v-btn>
       
-              <!-- Enlace Pestaña Nueva -->
-              <v-btn 
-                color="light-blue" 
-                icon="mdi-link" 
-                title="Insertar Enlace (Pestaña Nueva)" 
-                @click="insertarEnlaceHtml"
-              ></v-btn>
-
-
-            <!-- Insertar Frame -->
+        <!-- Enlace Pestaña Nueva -->
         <v-btn 
-          color="cyan" 
-          icon="mdi-web" 
-          title="Insertar Web / iFrame Foro" 
-          @click="insertarIframe"
+          color="light-blue" 
+          icon="mdi-link" 
+          title="Insertar Enlace (Pestaña Nueva)" 
+          @click="insertarEnlaceHtml"
+        ></v-btn>
+
+        <!-- Insertar Frame -->
+   <!-- Botón iFrame / Web (Junto a los enlaces) -->
+    <v-btn 
+      color="cyan" 
+      icon="mdi-web" 
+      title="Insertar Web / iFrame Foro" 
+      @click="insertarIframe"
     ></v-btn>
 
- 
   </v-btn-toggle>
 
-  
         <v-divider vertical class="mx-1 my-1"></v-divider>
-
-        <!-- GRUPO 3: ALINEACIÓN DE TEXTO -->
-
 
         <v-btn-toggle density="compact" variant="tonal" class="rounded" color="secondary">
 
+          <!-- Font Pair Selector -->
+          <v-select
+            v-model="selectedFontPair"
+            :items="fontPairs"
+            item-title="label"
+            item-value="id"
+            label="Tipografía"
+            prepend-inner-icon="mdi-format-font"
+            density="compact"
+            variant="outlined"
+            hide-details
+            style="max-width: 220px;"
+            class="mr-2"
+            @update:model-value="aplicarTipografia"
+          ></v-select>
 
-             <!-- Selector de Gradiente / Estilo -->
+          <!-- Selector de Gradiente / Estilo -->
           <v-menu offset-y :close-on-content-click="false">
             <template v-slot:activator="{ props }">
               <v-btn 
@@ -274,31 +335,129 @@
                 title="Cambiar Gradiente de Fondo" 
                 v-bind="props"
               ></v-btn>
-      </template>
+            </template>
 
-      <v-card width="300" class="pa-3">
-        <v-card-title class="text-subtitle-2 pa-0 mb-2">Selecciona un Gradiente</v-card-title>
-        
-        <v-item-group v-model="selectedGradient" mandatory @update:model-value="aplicarEstilo">
-          <v-row dense>
-            <v-col v-for="(grad, index) in gradientes" :key="index" cols="6">
-              <v-item v-slot="{ isSelected, toggle }">
-                <v-card
-                  :style="{ background: grad.value }"
-                  height="50"
-                  class="d-flex align-center justify-center cursor-pointer border"
-                  @click="toggle"
-                >
-                  <v-icon v-if="isSelected" icon="mdi-check" color="white"></v-icon>
-                </v-card>
-              </v-item>
-            </v-col>
-          </v-row>
-        </v-item-group>
-      </v-card>
-    </v-menu>
+            <v-card width="300" class="pa-3">
+              <v-card-title class="text-subtitle-2 pa-0 mb-2">Selecciona un Gradiente</v-card-title>
+              
+              <v-item-group v-model="selectedGradient" mandatory @update:model-value="aplicarEstilo">
+                <v-row dense>
+                  <v-col v-for="(grad, index) in gradientes" :key="index" cols="6">
+                    <v-item v-slot="{ isSelected, toggle }">
+                      <v-card
+                        :style="{ background: grad.value }"
+                        height="50"
+                        class="d-flex align-center justify-center cursor-pointer border"
+                        @click="toggle"
+                      >
+                        <v-icon v-if="isSelected" icon="mdi-check" color="white"></v-icon>
+                      </v-card>
+                    </v-item>
+                  </v-col>
+                </v-row>
+              </v-item-group>
+            </v-card>
+          </v-menu>
 
+          <!-- Botón Tamaño de Fuente (Menú desplegable) -->
+<v-menu offset-y>
+  <template v-slot:activator="{ props }">
     <v-btn 
+      color="indigo-lighten-2" 
+      icon="mdi-format-size" 
+      title="Cambiar Tamaño de Texto" 
+      v-bind="props"
+    ></v-btn>
+  </template>
+  <v-list density="compact">
+    <v-list-subheader>TAMAÑO DE TEXTO</v-list-subheader>
+
+    <v-list-item @click="cambiarTamanoTexto('text-xl')">
+      <template v-slot:prepend>
+        <v-icon size="small">mdi-format-font-size-increase</v-icon>
+      </template>
+      <v-list-item-title>Muy Grande (XL)</v-list-item-title>
+    </v-list-item>
+
+    <v-list-item @click="cambiarTamanoTexto('text-lg')">
+      <template v-slot:prepend>
+        <v-icon size="small">mdi-format-text</v-icon>
+      </template>
+      <v-list-item-title>Grande (LG)</v-list-item-title>
+    </v-list-item>
+
+    <v-list-item @click="cambiarTamanoTexto('text-sm')">
+      <template v-slot:prepend>
+        <v-icon size="small">mdi-format-font-size-decrease</v-icon>
+      </template>
+      <v-list-item-title>Pequeño (SM)</v-list-item-title>
+    </v-list-item>
+
+    <v-list-item @click="cambiarTamanoTexto('text-xs')">
+      <template v-slot:prepend>
+        <v-icon size="small">mdi-size-xs</v-icon>
+      </template>
+      <v-list-item-title>Muy Pequeño (XS)</v-list-item-title>
+    </v-list-item>
+  </v-list>
+</v-menu>
+
+          <!-- Botón y Menú de Resaltado (<mark>) -->
+<v-menu offset-y>
+  <template v-slot:activator="{ props }">
+    <v-btn 
+      color="amber-accent-3" 
+      icon="mdi-format-color-highlight" 
+      title="Resaltar Texto (<mark>)" 
+      v-bind="props"
+    ></v-btn>
+  </template>
+  <v-list density="compact">
+    <v-list-subheader>COLOR DE RESALTADO</v-list-subheader>
+    
+    <!-- Opción por defecto (Amarillo clásico) -->
+    <v-list-item @click="insertarMark()">
+      <template v-slot:prepend>
+        <v-icon color="yellow-accent-4">mdi-circle</v-icon>
+      </template>
+      <v-list-item-title>Amarillo (Por defecto)</v-list-item-title>
+    </v-list-item>
+
+    <!-- Verde (ideal para avisos como LEARN) -->
+    <v-list-item @click="insertarMark('#a8f0c6')">
+      <template v-slot:prepend>
+        <v-icon color="green-lighten-2">mdi-circle</v-icon>
+      </template>
+      <v-list-item-title>Verde Lecturas</v-list-item-title>
+    </v-list-item>
+
+    <!-- Azul (Recursos / Enlaces) -->
+    <v-list-item @click="insertarMark('#a5d8ff')">
+      <template v-slot:prepend>
+        <v-icon color="blue-lighten-3">mdi-circle</v-icon>
+      </template>
+      <v-list-item-title>Azul Recursos</v-list-item-title>
+    </v-list-item>
+
+    <!-- Rosa / Coral (Avisos importantes) -->
+    <v-list-item @click="insertarMark('#ffc9c9')">
+      <template v-slot:prepend>
+        <v-icon color="red-lighten-3">mdi-circle</v-icon>
+      </template>
+      <v-list-item-title>Rosa Alerta</v-list-item-title>
+    </v-list-item>
+
+    <!-- Violeta / Púrpura -->
+    <v-list-item @click="insertarMark('#eebefa')">
+      <template v-slot:prepend>
+        <v-icon color="purple-lighten-3">mdi-circle</v-icon>
+      </template>
+      <v-list-item-title>Púrpura Conceptos</v-list-item-title>
+    </v-list-item>
+  </v-list>
+</v-menu>
+
+          <v-btn 
             color="primary" 
             icon="mdi-view-column" 
             title="Insertar 2 Columnas" 
@@ -333,26 +492,22 @@
         <!-- GRUPO 4: ENLACES, ESTILOS Y EMBED -->
         <v-btn-toggle density="compact" variant="tonal" class="rounded">
 
-       
+          <!-- Botón Abrir Visor en Pestaña Nueva -->
+          <v-btn 
+            color="light-green-darken-1" 
+            icon="mdi-open-in-new" 
+            title="Abrir Presentación Completa en Nueva Pestaña" 
+            @click="abrirVisorNuevaPestana"
+          ></v-btn>
 
-       
-
-    <!-- Botón Abrir Visor en Pestaña Nueva -->
-    <v-btn 
-      color="light-green-darken-1" 
-      icon="mdi-open-in-new" 
-      title="Abrir Presentación Completa en Nueva Pestaña" 
-      @click="abrirVisorNuevaPestana"
-    ></v-btn>
-
-        <!-- Copiar iFrame del Visor -->
-        <v-btn 
-          color="amber-darken-2" 
-          icon="mdi-code-json" 
-          title="Copiar Código iFrame del Visor" 
-          @click="copiarIframeViewer"
-        ></v-btn>
-  </v-btn-toggle>
+          <!-- Copiar iFrame del Visor -->
+          <v-btn 
+            color="amber-darken-2" 
+            icon="mdi-code-json" 
+            title="Copiar Código iFrame del Visor" 
+            @click="copiarIframeViewer"
+          ></v-btn>
+        </v-btn-toggle>
 
 </div>
 
@@ -392,6 +547,26 @@
             </row>
           </v-container>
 
+          <!-- Modal para Insertar Web / iFrame -->
+          <v-dialog v-model="dialogIframe" max-width="450">
+            <v-card title="Insertar Web / iFrame">
+              <v-card-text>
+                <v-text-field 
+                  v-model="iframeUrl" 
+                  label="URL del sitio web o foro" 
+                  placeholder="https://ejemplo.com" 
+                  density="compact"
+                  hide-details
+                ></v-text-field>
+              </v-card-text>
+              <v-card-actions class="pa-4">
+                <v-spacer></v-spacer>
+                <v-btn variant="text" @click="dialogIframe = false">Cancelar</v-btn>
+                <v-btn color="cyan" variant="flat" @click="confirmarInsertarIframe">Insertar</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
           <!-- Modal YouTube -->
           <v-dialog v-model="dialogYouTube" max-width="400">
             <v-card title="Insertar Video de YouTube">
@@ -405,12 +580,10 @@
               </v-card-actions>
             </v-card>
           </v-dialog>
+          
+          
+        </v-main>
 
-        
-        
-          </v-main>
-
-        
       </v-app>
     `,
       setup() {
@@ -419,7 +592,7 @@
         const fileInput = ref(null);
 
         // Estado de la presentación
-        const currentId = ref(null); // Guarda el UUID de Supabase si ya existe
+        const currentId = ref(null);
         const presentationTitle = ref('Mi Presentación Clase 1');
         const markdownText = ref(`## Diapositiva 1\nEscribe aquí el contenido de tu clase...`);
 
@@ -429,9 +602,6 @@
         const youtubeUrl = ref('');
 
         let revealInstance = null;
-
-
-
 
         const insertarEnCursor = (textoAInsertar) => {
           const textarea = editorRef.value.$el.querySelector('textarea');
@@ -449,7 +619,6 @@
 
         const triggerFileInput = () => fileInput.value.click();
 
-        // 1. Modificar subida de imagen directa para insertar HTML con ancho ajustable
         const subirImagenSupabase = async (event) => {
           const file = event.target.files[0];
           if (!file) return;
@@ -457,36 +626,33 @@
           subiendoImagen.value = true;
           try {
             const fileName = `${Date.now()}_${file.name}`;
-            const {data, error} = await supabaseClient
+            const { data, error } = await supabaseClient
               .storage
               .from('imagenes-diapositivas')
               .upload(fileName, file);
 
             if (error) throw error;
 
-            const {data: publicUrlData} = supabaseClient
+            const { data: publicUrlData } = supabaseClient
               .storage
               .from('imagenes-diapositivas')
               .getPublicUrl(fileName);
 
-            // Insertar en formato HTML con width por defecto
-            const htmlImage = `\n<img src="${publicUrlData.publicUrl}" width="600" style="display: block; margin: 0 auto;" />\n`;
+            const htmlImage = `\n<img src="${publicUrlData.publicUrl}" width="500" style="display: block; margin: 0 auto;" />\n`;
             insertarEnCursor(htmlImage);
             actualizarReveal();
           } catch (err) {
             alert('Error al subir la imagen: ' + err.message);
           } finally {
             subiendoImagen.value = false;
-            event.target.value = ''; // Limpiar input file
+            event.target.value = '';
           }
         };
 
-        // Estados para la galería y eliminación
         const dialogGaleria = ref(false);
         const imagenesGaleria = ref([]);
         const cargandoEliminar = ref(false);
 
-        // 1. Lógica para ELIMINAR la presentación activa
         const eliminarPresentacion = async () => {
           if (!currentId.value) return;
 
@@ -495,7 +661,7 @@
 
           cargandoEliminar.value = true;
           try {
-            const {error} = await supabaseClient
+            const { error } = await supabaseClient
               .from('presentations')
               .delete()
               .eq('id', currentId.value);
@@ -504,13 +670,12 @@
 
             alert('Presentación eliminada correctamente.');
 
-            // Resetear formulario a un proyecto nuevo
             currentId.value = null;
             selectedPresentationId.value = null;
             presentationTitle.value = 'Mi Nueva Presentación';
             markdownText.value = '## Diapositiva 1\nEscribe aquí el contenido...';
 
-            await obtenerPresentaciones(); // Refresca el dropdown
+            await obtenerPresentaciones();
             actualizarReveal();
           } catch (err) {
             alert('Error al eliminar: ' + err.message);
@@ -519,22 +684,20 @@
           }
         };
 
-        // 2. Lógica para Cargar la GALERÍA DE IMÁGENES desde Supabase Storage
         const abrirGaleriaMedios = async () => {
           dialogGaleria.value = true;
           try {
-            const {data, error} = await supabaseClient
+            const { data, error } = await supabaseClient
               .storage
               .from('imagenes-diapositivas')
               .list();
 
             if (error) throw error;
 
-            // Mapear URLs públicas de las imágenes almacenadas
             imagenesGaleria.value = (data || [])
               .filter(file => file.name !== '.emptyFolderPlaceholder')
               .map(file => {
-                const {data: publicUrlData} = supabaseClient
+                const { data: publicUrlData } = supabaseClient
                   .storage
                   .from('imagenes-diapositivas')
                   .getPublicUrl(file.name);
@@ -549,61 +712,35 @@
           }
         };
 
-        // Insertar desde la galería usando etiqueta HTML con control de tamaño
         const insertarImagenDesdeGaleria = (url) => {
-          const htmlImage = `\n<img src="${url}" width="600" style="display: block; margin: 0 auto;" />\n`;
+          const htmlImage = `\n<img src="${url}" width="500" style="display: block; margin: 0 auto;" />\n`;
           insertarEnCursor(htmlImage);
           dialogGaleria.value = false;
         };
 
-        // Eliminar una imagen individual del bucket en Supabase Storage
-        // const eliminarImagenGaleria = async (fileName) => {
-        //   const confirmacion = confirm(`¿Deseas eliminar permanentemente la imagen "${fileName}" de Supabase Storage?`);
-        //   if (!confirmacion) return;
-
-        //   try {
-        //     const {error} = await supabaseClient
-        //       .storage
-        //       .from('imagenes-diapositivas')
-        //       .remove([fileName]);
-
-        //     if (error) throw error;
-
-        //     // Actualizar la lista local filtrando la imagen eliminada
-        //     imagenesGaleria.value = imagenesGaleria.value.filter(img => img.name !== fileName);
-        //   } catch (err) {
-        //     alert('Error al eliminar la imagen: ' + err.message);
-        //   }
-        // };
-
-        // Estados para el modal de confirmación de imagen
         const dialogConfirmarBorrado = ref(false);
         const imagenABorrar = ref('');
         const cargandoBorradoImg = ref(false);
 
-        // 1. Abre el modal de confirmación
         const confirmarBorradoImagen = (fileName) => {
           imagenABorrar.value = fileName;
           dialogConfirmarBorrado.value = true;
         };
 
-        // 2. Ejecuta el borrado al presionar "Eliminar" en el modal
         const ejecutarEliminarImagen = async () => {
           if (!imagenABorrar.value) return;
 
           cargandoBorradoImg.value = true;
           try {
-            const {error} = await supabaseClient
+            const { error } = await supabaseClient
               .storage
               .from('imagenes-diapositivas')
               .remove([imagenABorrar.value]);
 
             if (error) throw error;
 
-            // Actualizar la lista local
             imagenesGaleria.value = imagenesGaleria.value.filter(img => img.name !== imagenABorrar.value);
 
-            // Cerrar el modal
             dialogConfirmarBorrado.value = false;
             imagenABorrar.value = '';
           } catch (err) {
@@ -619,7 +756,7 @@
           const match = youtubeUrl.value.match(regExp);
           const videoId = (match && match[2].length === 11) ? match[2] : youtubeUrl.value;
 
-          insertarEnCursor(`\n<iframe data-src="https://www.youtube.com/embed/${videoId}" width="100%" height="600px" frameborder="0" allowfullscreen></iframe>\n`);
+          insertarEnCursor(`\n<iframe data-src="https://www.youtube.com/embed/${videoId}" width="100%" height="500px" frameborder="0" allowfullscreen></iframe>\n`);
           dialogYouTube.value = false;
           youtubeUrl.value = '';
         };
@@ -629,30 +766,48 @@
           insertarEnCursor(plantilla);
         };
 
+        // const insertarIframe = () => {
+        //   const url = prompt("URL del foro o página web:", "https://");
+        //   if (url) {
+        //     insertarEnCursor(`\n<iframe data-src="${url}" width="100%" height="800px" style="border:none;"></iframe>\n`);
+        //   }
+        // };
+
+        // Estados reactivos para el modal de iFrame
+        const dialogIframe = ref(false);
+        const iframeUrl = ref('');
+
+        // Abrir modal al hacer clic en el botón
         const insertarIframe = () => {
-          const url = prompt("URL del foro o página web:", "https://");
-          if (url) {
-            insertarEnCursor(`\n<iframe data-src="${url}" width="100%" height="800px" style="border:none;"></iframe>\n`);
-          }
+          iframeUrl.value = 'https://';
+          dialogIframe.value = true;
         };
 
+        // Confirmar e insertar el iFrame en el editor
+        const confirmarInsertarIframe = () => {
+          if (!iframeUrl.value.trim()) return;
 
+          let url = iframeUrl.value.trim();
+          if (!/^https?:\/\//i.test(url)) {
+            url = 'https://' + url;
+          }
 
+          insertarEnCursor(`\n<iframe data-src="${url}" width="100%" height="800px" style="border:none;"></iframe>\n`);
+          dialogIframe.value = false;
+          iframeUrl.value = '';
+        };
 
-
-        // Nuevos estados para la lista de archivos
         const listaPresentaciones = ref([]);
         const selectedPresentationId = ref(null);
         const cargandoLista = ref(false);
 
-        // Obtener la lista de presentaciones disponibles desde Supabase
         const obtenerPresentaciones = async () => {
           cargandoLista.value = true;
           try {
-            const {data, error} = await supabaseClient
+            const { data, error } = await supabaseClient
               .from('presentations')
               .select('id, title, content_markdown, theme_config')
-              .order('updated_at', {ascending: false});
+              .order('updated_at', { ascending: false });
 
             if (error) throw error;
             listaPresentaciones.value = data || [];
@@ -663,7 +818,6 @@
           }
         };
 
-        // Cargar en el editor la presentación elegida
         const cargarPresentacionSeleccionada = (id) => {
           const item = listaPresentaciones.value.find(p => p.id === id);
           if (!item) return;
@@ -672,66 +826,127 @@
           presentationTitle.value = item.title;
           markdownText.value = item.content_markdown;
 
-          // Restaurar el gradiente si existe
-          if (item.theme_config?.gradient) {
+          if (item.theme_config?.gradient !== undefined) {
             const indexGradiente = gradientes.value.findIndex(g => g.value === item.theme_config.gradient);
             if (indexGradiente !== -1) {
               selectedGradient.value = indexGradiente;
             }
           }
 
+          if (item.theme_config?.fontPair) {
+            selectedFontPair.value = item.theme_config.fontPair;
+            aplicarTipografia();
+          }
+
           actualizarReveal();
         };
 
-        // Ajuste en guardarPresentacion para sincronizar el ID y refrescar la lista
+        // Guardar Presentación (Incluyendo Tipografía y Gradiente en theme_config)
         const guardarPresentacion = async () => {
           if (!presentationTitle.value.trim()) {
             alert('Por favor asigna un nombre al archivo.');
             return;
           }
 
-
           cargandoGuardado.value = true;
           try {
+            const themeConfig = {
+              gradient: gradientes.value[selectedGradient.value].value,
+              fontPair: selectedFontPair.value
+            };
+
             const payload = {
               title: presentationTitle.value.trim(),
               content_markdown: markdownText.value,
-              theme_config: {
-                gradient: gradientes.value[selectedGradient.value].value
-              },
+              theme_config: themeConfig,
               is_published: true,
               updated_at: new Date()
             };
 
-            // Si ya teníamos un ID cargado, lo incluimos para que actualice en lugar de crear un duplicado
             if (currentId.value) {
               payload.id = currentId.value;
             }
 
-            // Hace UPSERT buscando coincidencias en la columna 'title'
-            const {data, error} = await supabaseClient
+            const { data, error } = await supabaseClient
               .from('presentations')
-              .upsert(payload, {onConflict: 'title'})
+              .upsert(payload, { onConflict: 'title' })
               .select();
 
             if (error) throw error;
 
+            if (data && data.length > 0) {
+              currentId.value = data[0].id;
+            }
+
             alert(`¡Proyecto "${presentationTitle.value}" guardado correctamente en Supabase!`);
+            await obtenerPresentaciones();
           } catch (err) {
             alert('Error al guardar: ' + err.message);
           } finally {
             cargandoGuardado.value = false;
           }
         };
-        // En tu setup()
 
-        // Configuración del menú de gradientes
+        // Tipografías
+        const fontPairs = [
+          {
+            id: 'montserrat-inter',
+            label: 'Montserrat / Inter',
+            titleFont: 'Montserrat',
+            bodyFont: 'Inter',
+            url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;800&display=swap'
+          },
+          {
+            id: 'playfair-lato',
+            label: 'Playfair / Lato',
+            titleFont: 'Playfair Display',
+            bodyFont: 'Lato',
+            url: 'https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700;800&display=swap'
+          },
+          {
+            id: 'poppins-nunito',
+            label: 'Poppins / Nunito',
+            titleFont: 'Poppins',
+            bodyFont: 'Nunito',
+            url: 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600&family=Poppins:wght@700;800&display=swap'
+          },
+          {
+            id: 'space-grotesk-roboto',
+            label: 'Space Grotesk / Roboto',
+            titleFont: 'Space Grotesk',
+            bodyFont: 'Roboto',
+            url: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Space+Grotesk:wght@700&display=swap'
+          }
+        ];
+
+        const selectedFontPair = ref('montserrat-inter');
+
+        const cargarGoogleFont = (url) => {
+          if (!document.querySelector(`link[href="${url}"]`)) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = url;
+            document.head.appendChild(link);
+          }
+        };
+
+        const aplicarTipografia = () => {
+          const pair = fontPairs.find(p => p.id === selectedFontPair.value) || fontPairs[0];
+          cargarGoogleFont(pair.url);
+
+          if (revealRef.value) {
+            revealRef.value.style.setProperty('--title-font', `'${pair.titleFont}', sans-serif`);
+            revealRef.value.style.setProperty('--body-font', `'${pair.bodyFont}', sans-serif`);
+          }
+        };
+
+        // Gradientes
         const gradientes = ref([
-          {name: 'Verde Esmeralda', value: 'linear-gradient(135deg, #052e16 0%, #14532d 50%, #15803d 100%)'},
-          {name: 'Púrpura Neón', value: 'linear-gradient(135deg, #240b36 0%, #c31432 100%)'},
-          {name: 'Azul Cósmico', value: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%)'},
-          {name: 'Bosque Profundo', value: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)'},
-          {name: 'Café Calidez', value: 'linear-gradient(135deg, #271c19 0%, #4a2e2b 50%, #78350f 100%)'}
+          { name: 'Verde Esmeralda', value: 'linear-gradient(135deg, #052e16 0%, #14532d 50%, #15803d 100%)' },
+          { name: 'Púrpura Neón', value: 'linear-gradient(135deg, #240b36 0%, #c31432 100%)' },
+          { name: 'Azul Cósmico', value: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%)' },
+          { name: 'Bosque Profundo', value: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)' },
+          { name: 'Café Calidez', value: 'linear-gradient(135deg, #271c19 0%, #4a2e2b 50%, #78350f 100%)' }
         ]);
 
         const selectedGradient = ref(0);
@@ -745,12 +960,10 @@
           });
         };
 
-        //insertar salto
         const insertarSaltoDobleHTML = () => {
           insertarEnCursor('<br><br>');
         };
 
-        // alinear texto
         const alinearTexto = (alineacion) => {
           const textarea = editorRef.value.$el.querySelector('textarea');
           const inicio = textarea.selectionStart;
@@ -767,7 +980,6 @@
           actualizarReveal();
         };
 
-        // insertar enlace
         const insertarEnlaceHtml = () => {
           const textarea = editorRef.value.$el.querySelector('textarea');
           const inicio = textarea.selectionStart;
@@ -780,12 +992,11 @@
           let url = prompt("Dirección web (URL):", "https://");
           if (!url) return;
 
-          // Asegura que la URL tenga el protocolo para evitar problemas de rutas relativas
           if (!/^https?:\/\//i.test(url)) {
             url = 'https://' + url;
           }
 
-          const htmlLink = `<a href="${url}" target="_blank" style="color: #40c4ff;">${texto}</a>`;
+          const htmlLink = `<a href="${url}" target="_blank" >${texto}</a>`;
 
           if (textoSeleccionado) {
             markdownText.value = markdownText.value.substring(0, inicio) + htmlLink + markdownText.value.substring(fin);
@@ -796,23 +1007,26 @@
           actualizarReveal();
         };
 
-
-        // abrir en pestana nueva
-
-        // Abrir el visor en una pestaña nueva del navegador
         const abrirVisorNuevaPestana = () => {
           if (!presentationTitle.value.trim()) {
             alert('Asigna un nombre al proyecto para abrir su vista previa completa.');
             return;
           }
-          const baseUrl = window.location.origin;
+
           const tituloEncoded = encodeURIComponent(presentationTitle.value.trim());
-          const urlVisor = `${baseUrl}/slides/viewer.html?title=${tituloEncoded}`;
+
+          // 1. Obtiene la ruta de la carpeta actual donde se ejecuta index.html
+          // (por ejemplo: '/gbda412/' en GH Pages o '/home/lui/Documents/slidesEditor/' en local)
+          const currentPath = window.location.pathname.substring(
+            0,
+            window.location.pathname.lastIndexOf('/') + 1
+          );
+
+          // 2. Construye la URL combinando el origen y la ruta relativa
+          const urlVisor = `${window.location.origin}${currentPath}/viewer.html?title=${tituloEncoded}`;
 
           window.open(urlVisor, '_blank');
         };
-
-        // copie iframeviewer
 
         const copiarIframeViewer = () => {
           if (!presentationTitle.value.trim()) {
@@ -820,15 +1034,19 @@
             return;
           }
 
-          // Detecta el origen base (ejemplo: https://tusitio.com)
-          const baseUrl = window.location.origin;
           const tituloEncoded = encodeURIComponent(presentationTitle.value.trim());
-          const urlViewer = `${baseUrl}/slides/viewer.html?title=${tituloEncoded}`;
 
-          // Estructura del iFrame listo para incrustar
+          // Obtiene la ruta actual donde reside el editor
+          const currentPath = window.location.pathname.substring(
+            0,
+            window.location.pathname.lastIndexOf('/') + 1
+          );
+
+          // Construye la URL relativa limpia apuntando a viewer.html
+          const urlViewer = `${window.location.origin}${currentPath}viewer.html?title=${tituloEncoded}`;
+
           const iframeCode = `<iframe src="${urlViewer}" width="100%" height="500px" style="border: none; border-radius: 8px;" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>`;
 
-          // Copia al portapapeles del usuario
           navigator.clipboard.writeText(iframeCode).then(() => {
             alert(`¡Código iFrame copiado al portapapeles!\n\n${iframeCode}`);
           }).catch(err => {
@@ -837,7 +1055,58 @@
           });
         };
 
-        // Actualizar Reveal.js y mantener el foco en la diapositiva actual
+        // Función genérica para envolver el texto seleccionado con <mark>
+        const insertarMark = (color = null) => {
+          const textarea = editorRef.value?.$el?.querySelector('textarea') || editorRef.value;
+          if (!textarea) return;
+
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const textoSeleccionado = markdownText.value.substring(start, end);
+
+          // Si no hay texto seleccionado, usa un texto por defecto
+          const contenido = textoSeleccionado || 'Texto destacado';
+
+          // Construye el tag con o sin estilo de color
+          const estiloColor = color ? ` style="background-color: ${color}; color: #000;"` : '';
+          const etiquetaMark = `<mark${estiloColor}>${contenido}</mark>`;
+
+          // Reemplaza o inserta en la posición del cursor
+          markdownText.value =
+            markdownText.value.substring(0, start) +
+            etiquetaMark +
+            markdownText.value.substring(end);
+
+          actualizarReveal();
+        };
+
+        // Función para cambiar el tamaño del texto usando clases de Reveal
+        const cambiarTamanoTexto = (claseTamano) => {
+          const textarea = editorRef.value?.$el?.querySelector('textarea') || editorRef.value;
+          if (!textarea) return;
+
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const textoSeleccionado = markdownText.value.substring(start, end).trim();
+
+          if (textoSeleccionado) {
+            // Siempre envuelve en un <div> dejando saltos de línea para que Markdown no falle
+            const textoConClase = `<div class="${claseTamano}">\n\n${textoSeleccionado}\n\n</div>`;
+            markdownText.value =
+              markdownText.value.substring(0, start) +
+              textoConClase +
+              markdownText.value.substring(end);
+          } else {
+            // Plantilla por defecto si no hay selección
+            const textoBase = `\n<div class="${claseTamano}">\n\nTexto de ejemplo...\n\n</div>\n`;
+            insertarEnCursor(textoBase);
+          }
+
+          actualizarReveal();
+        };
+
+        // //////////
+
         const actualizarReveal = () => {
           let slideIndex = 0;
           if (editorRef.value) {
@@ -853,30 +1122,48 @@
             }
           }
 
+
+
           nextTick(() => {
             if (revealInstance) revealInstance.destroy();
 
             const slidesContainer = revealRef.value.querySelector('.slides');
             if (slidesContainer) {
               slidesContainer.innerHTML = `
-        <section data-markdown>
-          <textarea data-template>${markdownText.value}</textarea>
-        </section>
-      `;
+                <section data-markdown>
+                  <textarea data-template>${markdownText.value}</textarea>
+                </section>
+              `;
             }
 
             revealInstance = new Reveal(revealRef.value, {
               plugins: [RevealMarkdown],
               embedded: true,
               keyboardCondition: 'focused',
-              center: false // Mantenemos la configuración previa
+              center: true,
+              slideNumber: 'c/t',
+              // controls: true,
+              controlsBackArrows: 'visible',
+              progress: true,
+              controlsLayout: 'edges',
+              overview: true,
+              // previewLinks: true,
+              autoAnimate: true,
+              width: 1280,
+              height: 720,
+
+              // Factor de escala: reduce el margen alrededor de la diapositiva
+              margin: 0.02, // Valor por defecto es 0.1 (al bajarlo a 0.02 ganas mucho espacio)
+
+              // Límites de escalado para pantallas grandes
+              minScale: 0.2,
+              maxScale: 2.0,
+
             });
 
             revealInstance.initialize().then(() => {
               aplicarEstilo();
-              obtenerPresentaciones();
-
-
+              aplicarTipografia();
 
               if (revealInstance && typeof revealInstance.slide === 'function') {
                 revealInstance.slide(slideIndex, 0);
@@ -885,37 +1172,11 @@
           });
         };
 
-        // const actualizarReveal = () => {
-        //   nextTick(() => {
-        //     if (revealInstance) revealInstance.destroy();
-
-        //     const slidesContainer = revealRef.value.querySelector('.slides');
-        //     if (slidesContainer) {
-        //       slidesContainer.innerHTML = `
-        //         <section data-markdown>
-        //           <textarea data-template>${markdownText.value}</textarea>
-        //         </section>
-        //     `;
-        //     }
-
-        //     revealInstance = new Reveal(revealRef.value, {
-        //       plugins: [RevealMarkdown],
-        //       embedded: true,
-        //       keyboardCondition: 'focused'
-        //     });
-
-        //     revealInstance.initialize({center: false}).then(() => {
-        //       aplicarEstilo();
-        //       obtenerPresentaciones();
-        //     });
-        //   });
-        // };
-
         onMounted(() => {
+          obtenerPresentaciones();
           actualizarReveal();
         });
 
-        // ¡AQUÍ ESTABA EL DETALLE! Debes exponer gradientes, selectedGradient y aplicarEstilo al template:
         return {
           markdownText,
           presentationTitle,
@@ -926,16 +1187,19 @@
           cargandoGuardado,
           dialogYouTube,
           youtubeUrl,
-          gradientes,          // <-- Agregado
-          selectedGradient,    // <-- Agregado
-          aplicarEstilo,       // <-- Agregado
+          gradientes,
+          selectedGradient,
+          aplicarEstilo,
+          fontPairs,
+          selectedFontPair,
+          aplicarTipografia,
           insertarSaltoDobleHTML,
           alinearTexto,
           insertarEnlaceHtml,
-          listaPresentaciones,           // <-- Agregado
-          selectedPresentationId,       // <-- Agregado
-          cargandoLista,                // <-- Agregado
-          cargarPresentacionSeleccionada, // <-- Agregado
+          listaPresentaciones,
+          selectedPresentationId,
+          cargandoLista,
+          cargarPresentacionSeleccionada,
           triggerFileInput,
           subirImagenSupabase,
           currentId,
@@ -945,7 +1209,6 @@
           imagenesGaleria,
           abrirGaleriaMedios,
           insertarImagenDesdeGaleria,
-          // eliminarImagenGaleria,
           dialogConfirmarBorrado,
           imagenABorrar,
           cargandoBorradoImg,
@@ -954,9 +1217,14 @@
           insertarYouTube,
           insertarDosColumnas,
           abrirVisorNuevaPestana,
+          dialogIframe,
+          iframeUrl,
           insertarIframe,
-          copiarIframeViewer, // <-- Agregado aquí
+          confirmarInsertarIframe,
+          copiarIframeViewer,
+          insertarMark,
           guardarPresentacion,
+          cambiarTamanoTexto,
           actualizarReveal
         };
       }
