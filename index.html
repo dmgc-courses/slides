@@ -118,10 +118,10 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const { createApp, ref, onMounted, nextTick } = Vue;
-    const { createVuetify } = Vuetify;
+    const {createApp, ref, onMounted, nextTick} = Vue;
+    const {createVuetify} = Vuetify;
 
-    const vuetify = createVuetify({ theme: { defaultTheme: 'dark' } });
+    const vuetify = createVuetify({theme: {defaultTheme: 'dark'}});
 
     const App = {
       template: `
@@ -626,14 +626,14 @@
           subiendoImagen.value = true;
           try {
             const fileName = `${Date.now()}_${file.name}`;
-            const { data, error } = await supabaseClient
+            const {data, error} = await supabaseClient
               .storage
               .from('imagenes-diapositivas')
               .upload(fileName, file);
 
             if (error) throw error;
 
-            const { data: publicUrlData } = supabaseClient
+            const {data: publicUrlData} = supabaseClient
               .storage
               .from('imagenes-diapositivas')
               .getPublicUrl(fileName);
@@ -661,7 +661,7 @@
 
           cargandoEliminar.value = true;
           try {
-            const { error } = await supabaseClient
+            const {error} = await supabaseClient
               .from('presentations')
               .delete()
               .eq('id', currentId.value);
@@ -687,7 +687,7 @@
         const abrirGaleriaMedios = async () => {
           dialogGaleria.value = true;
           try {
-            const { data, error } = await supabaseClient
+            const {data, error} = await supabaseClient
               .storage
               .from('imagenes-diapositivas')
               .list();
@@ -697,7 +697,7 @@
             imagenesGaleria.value = (data || [])
               .filter(file => file.name !== '.emptyFolderPlaceholder')
               .map(file => {
-                const { data: publicUrlData } = supabaseClient
+                const {data: publicUrlData} = supabaseClient
                   .storage
                   .from('imagenes-diapositivas')
                   .getPublicUrl(file.name);
@@ -732,7 +732,7 @@
 
           cargandoBorradoImg.value = true;
           try {
-            const { error } = await supabaseClient
+            const {error} = await supabaseClient
               .storage
               .from('imagenes-diapositivas')
               .remove([imagenABorrar.value]);
@@ -804,10 +804,10 @@
         const obtenerPresentaciones = async () => {
           cargandoLista.value = true;
           try {
-            const { data, error } = await supabaseClient
+            const {data, error} = await supabaseClient
               .from('presentations')
               .select('id, title, content_markdown, theme_config')
-              .order('updated_at', { ascending: false });
+              .order('updated_at', {ascending: false});
 
             if (error) throw error;
             listaPresentaciones.value = data || [];
@@ -867,9 +867,9 @@
               payload.id = currentId.value;
             }
 
-            const { data, error } = await supabaseClient
+            const {data, error} = await supabaseClient
               .from('presentations')
-              .upsert(payload, { onConflict: 'title' })
+              .upsert(payload, {onConflict: 'title'})
               .select();
 
             if (error) throw error;
@@ -942,11 +942,14 @@
 
         // Gradientes
         const gradientes = ref([
-          { name: 'Verde Esmeralda', value: 'linear-gradient(135deg, #052e16 0%, #14532d 50%, #15803d 100%)' },
-          { name: 'Púrpura Neón', value: 'linear-gradient(135deg, #240b36 0%, #c31432 100%)' },
-          { name: 'Azul Cósmico', value: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%)' },
-          { name: 'Bosque Profundo', value: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)' },
-          { name: 'Café Calidez', value: 'linear-gradient(135deg, #271c19 0%, #4a2e2b 50%, #78350f 100%)' }
+          {name: 'Verde Esmeralda', value: 'linear-gradient(135deg, #052e16 0%, #14532d 50%, #15803d 100%)'},
+          {name: 'Púrpura Neón', value: 'linear-gradient(135deg, #240b36 0%, #c31432 100%)'},
+          {name: 'Azul Cósmico', value: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%)'},
+          {name: 'Bosque Profundo', value: 'linear-gradient(135deg, #134e5e 0%, #71b280 100%)'},
+          {name: 'Café Calidez', value: 'linear-gradient(135deg, #271c19 0%, #4a2e2b 50%, #78350f 100%)'},
+          {name: 'Aqua', value: 'linear-gradient(90deg, #07aeea 0.000%, #2bf598 100.000%)'}, 
+          {name: 'Mar', value: 'linear-gradient(90deg, #a47451 0.000%, #9c9881 16.667%, #73a09d 33.333%, #3b899a 50.000%, #095b79 66.667%, #002847 83.333%, #000116 100.000%)'}
+
         ]);
 
         const selectedGradient = ref(0);
