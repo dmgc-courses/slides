@@ -118,7 +118,7 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const {createApp, ref, onMounted, nextTick} = Vue;
+    const {createApp, ref, computed, onMounted, nextTick} = Vue;
     const {createVuetify} = Vuetify;
 
     const vuetify = createVuetify({theme: {defaultTheme: 'dark'}});
@@ -137,7 +137,7 @@
           <!-- Menú para Cargar Presentaciones Guardadas -->
           <v-select
             v-model="selectedPresentationId"
-            :items="listaPresentaciones"
+            :items="presentacionesFiltradas"
             item-title="title"
             item-value="id"
             placeholder="Abrir guardada..."
@@ -150,6 +150,20 @@
             @update:model-value="cargarPresentacionSeleccionada"
             :loading="cargandoLista"
           ></v-select>
+
+          <!-- 2. Campo para elegir/escribir el Curso / Carpeta -->
+          <v-combobox
+            v-model="currentCourse"
+            :items="listaCursos"
+            placeholder="Curso / Carpeta"
+            density="compact"
+            variant="solo-filled"
+            hide-details
+            class="mx-2"
+            style="max-width: 200px;"
+            prepend-inner-icon="mdi-folder-account"
+            @update:model-value="selectedPresentationId = null"
+          ></v-combobox>
 
           <!-- Input para el Título del Proyecto -->
           <v-text-field
@@ -603,6 +617,10 @@
 
         let revealInstance = null;
 
+        // Agrega estas variables dentro de setup():
+        const currentCourse = ref('General'); // Curso por defecto
+        const listaCursos = ref(['General', 'Diseño Web', 'Base de Datos', 'Audiovisual']); // Sugerencias iniciales
+
         const insertarEnCursor = (textoAInsertar) => {
           const textarea = editorRef.value.$el.querySelector('textarea');
           const inicio = textarea.selectionStart;
@@ -801,16 +819,47 @@
         const selectedPresentationId = ref(null);
         const cargandoLista = ref(false);
 
+        // const obtenerPresentaciones = async () => {
+        //   cargandoLista.value = true;
+        //   try {
+        //     const {data, error} = await supabaseClient
+        //       .from('presentations')
+        //       .select('id, title, content_markdown, theme_config')
+        //       .order('updated_at', {ascending: false});
+
+        //     if (error) throw error;
+
+
+        //     listaPresentaciones.value = data || [];
+        //   } catch (err) {
+        //     console.error('Error al listar presentaciones:', err.message);
+        //   } finally {
+        //     cargandoLista.value = false;
+        //   }
+        // };
+
         const obtenerPresentaciones = async () => {
           cargandoLista.value = true;
           try {
             const {data, error} = await supabaseClient
               .from('presentations')
-              .select('id, title, content_markdown, theme_config')
+              .select('id, title, content_markdown, theme_config, course') // <-- Agregado course[cite: 2]
+              .order('course', {ascending: true}) // <-- Ordenar por curso
               .order('updated_at', {ascending: false});
 
             if (error) throw error;
-            listaPresentaciones.value = data || [];
+
+            // Asigna 'Sin Curso' a las presentaciones antiguas que no tengan curso asignado
+            listaPresentaciones.value = (data || []).map(item => ({
+              ...item,
+              course: item.course || 'Sin Curso'
+            }));
+
+            // Extrae cursos únicos dinámicamente para autocompletar el v-combobox
+            const cursosUnicos = [...new Set(listaPresentaciones.value.map(p => p.course))];
+            if (cursosUnicos.length > 0) {
+              listaCursos.value = cursosUnicos;
+            }
           } catch (err) {
             console.error('Error al listar presentaciones:', err.message);
           } finally {
@@ -824,6 +873,7 @@
 
           currentId.value = item.id;
           presentationTitle.value = item.title;
+          currentCourse.value = item.course || 'General'; // <-- Asigna el curso guardado[cite: 2]
           markdownText.value = item.content_markdown;
 
           if (item.theme_config?.gradient !== undefined) {
@@ -857,6 +907,7 @@
 
             const payload = {
               title: presentationTitle.value.trim(),
+              course: currentCourse.value.trim() || 'General', // <-- Guardar el curso[cite: 2]
               content_markdown: markdownText.value,
               theme_config: themeConfig,
               is_published: true,
@@ -878,8 +929,7 @@
               currentId.value = data[0].id;
             }
 
-            alert(`¡Proyecto "${presentationTitle.value}" guardado correctamente en Supabase!`);
-            await obtenerPresentaciones();
+            alert(`¡Proyecto "${presentationTitle.value}" guardado correctamente en la carpeta "${currentCourse.value}"!`); await obtenerPresentaciones();
           } catch (err) {
             alert('Error al guardar: ' + err.message);
           } finally {
@@ -949,10 +999,10 @@
           {name: 'Café Calidez', value: 'linear-gradient(135deg, #271c19 0%, #4a2e2b 50%, #78350f 100%)'},
           {name: 'Aqua', value: 'linear-gradient(90deg, #07aeea 0.000%, #2bf598 100.000%)'},
           {name: 'Mar', value: 'linear-gradient(90deg, #a47451 0.000%, #9c9881 16.667%, #73a09d 33.333%, #3b899a 50.000%, #095b79 66.667%, #002847 83.333%, #000116 100.000%)'},
-          {name: 'Elegante', value: 'linear-gradient(90deg, #121216 0.000%, #121216 7.692%, #16171a calc(7.692% + 1px), #16171a 15.385%, #1a1b1f calc(15.385% + 1px), #1a1b1f 23.077%, #1f2023 calc(23.077% + 1px), #1f2023 30.769%, #232427 calc(30.769% + 1px), #232427 38.462%, #27282b calc(38.462% + 1px), #27282b 46.154%, #2b2c2f calc(46.154% + 1px), #2b2c2f 53.846%, #2f3033 calc(53.846% + 1px), #2f3033 61.538%, #323337 calc(61.538% + 1px), #323337 69.231%, #36373a calc(69.231% + 1px), #36373a 76.923%, #38393d calc(76.923% + 1px), #38393d 84.615%, #3b3c40 calc(84.615% + 1px), #3b3c40 92.308%, #3d3e42 calc(92.308% + 1px) 100.000%)'}, 
-          {name: 'Serio', value: 'linear-gradient(90deg, #2f1136 0.000%, #2f1136 7.692%, #341234 calc(7.692% + 1px), #341234 15.385%, #3a1634 calc(15.385% + 1px), #3a1634 23.077%, #421c38 calc(23.077% + 1px), #421c38 30.769%, #4a233e calc(30.769% + 1px), #4a233e 38.462%, #532d46 calc(38.462% + 1px), #532d46 46.154%, #5b3751 calc(46.154% + 1px), #5b3751 53.846%, #63435d calc(53.846% + 1px), #63435d 61.538%, #69506b calc(61.538% + 1px), #69506b 69.231%, #6e5c7a calc(69.231% + 1px), #6e5c7a 76.923%, #70688a calc(76.923% + 1px), #70688a 84.615%, #707499 calc(84.615% + 1px), #707499 92.308%, #6e7ea9 calc(92.308% + 1px) 100.000%)'}, 
-          {name: 'Divertido', value: 'linear-gradient(225deg, #631683 0.000%, #7f237e 14.286%, #9e3980 28.571%, #bc5588 42.857%, #d57496 57.143%, #e494a8 71.429%, #e7b1be 85.714%, #dec8d6 100.000%)'}, 
-          {name: 'Morado', value: 'linear-gradient(135deg, #ffc695 0.000%, #636676 50.000%, #001426 100.000%)'}, 
+          {name: 'Elegante', value: 'linear-gradient(90deg, #121216 0.000%, #121216 7.692%, #16171a calc(7.692% + 1px), #16171a 15.385%, #1a1b1f calc(15.385% + 1px), #1a1b1f 23.077%, #1f2023 calc(23.077% + 1px), #1f2023 30.769%, #232427 calc(30.769% + 1px), #232427 38.462%, #27282b calc(38.462% + 1px), #27282b 46.154%, #2b2c2f calc(46.154% + 1px), #2b2c2f 53.846%, #2f3033 calc(53.846% + 1px), #2f3033 61.538%, #323337 calc(61.538% + 1px), #323337 69.231%, #36373a calc(69.231% + 1px), #36373a 76.923%, #38393d calc(76.923% + 1px), #38393d 84.615%, #3b3c40 calc(84.615% + 1px), #3b3c40 92.308%, #3d3e42 calc(92.308% + 1px) 100.000%)'},
+          {name: 'Serio', value: 'linear-gradient(90deg, #2f1136 0.000%, #2f1136 7.692%, #341234 calc(7.692% + 1px), #341234 15.385%, #3a1634 calc(15.385% + 1px), #3a1634 23.077%, #421c38 calc(23.077% + 1px), #421c38 30.769%, #4a233e calc(30.769% + 1px), #4a233e 38.462%, #532d46 calc(38.462% + 1px), #532d46 46.154%, #5b3751 calc(46.154% + 1px), #5b3751 53.846%, #63435d calc(53.846% + 1px), #63435d 61.538%, #69506b calc(61.538% + 1px), #69506b 69.231%, #6e5c7a calc(69.231% + 1px), #6e5c7a 76.923%, #70688a calc(76.923% + 1px), #70688a 84.615%, #707499 calc(84.615% + 1px), #707499 92.308%, #6e7ea9 calc(92.308% + 1px) 100.000%)'},
+          {name: 'Divertido', value: 'linear-gradient(225deg, #631683 0.000%, #7f237e 14.286%, #9e3980 28.571%, #bc5588 42.857%, #d57496 57.143%, #e494a8 71.429%, #e7b1be 85.714%, #dec8d6 100.000%)'},
+          {name: 'Morado', value: 'linear-gradient(135deg, #ffc695 0.000%, #636676 50.000%, #001426 100.000%)'},
           {name: 'Azul', value: ' linear-gradient(135deg, #000032 0.000%, #184664 50.000%, #4eb490 100.000%)'},
           {name: 'Azul_Dos', value: 'linear-gradient(0deg, #0a0000 0.000%, #250a26 25.000%, #49457a 50.000%, #767baa 75.000%, #aba9b5 100.000%)'}
 
@@ -1114,6 +1164,20 @@
           actualizarReveal();
         };
 
+        // Filtra las presentaciones basadas en el curso seleccionado en el v-combobox
+        const presentacionesFiltradas = computed(() => {
+          if (!currentCourse.value) {
+            return listaPresentaciones.value;
+          }
+
+          // Si el valor del combobox es un objeto o un string, obtenemos el texto limpio
+          const cursoSeleccionado = typeof currentCourse.value === 'object'
+            ? currentCourse.value.title || ''
+            : currentCourse.value;
+
+          return listaPresentaciones.value.filter(p => p.course === cursoSeleccionado);
+        });
+
         // //////////
 
         const actualizarReveal = () => {
@@ -1234,6 +1298,9 @@
           insertarMark,
           guardarPresentacion,
           cambiarTamanoTexto,
+          currentCourse,
+          listaCursos,
+          presentacionesFiltradas,
           actualizarReveal
         };
       }
