@@ -309,14 +309,13 @@
           @click="insertarEnlaceHtml"
         ></v-btn>
 
-        <!-- Insertar Frame -->
-   <!-- Botón iFrame / Web (Junto a los enlaces) -->
-    <v-btn 
-      color="cyan" 
-      icon="mdi-web" 
-      title="Insertar Web / iFrame Foro" 
-      @click="insertarIframe"
-    ></v-btn>
+        <!-- Gestor de Foros de Discusión -->
+        <v-btn 
+          color="cyan" 
+          icon="mdi-forum" 
+          title="Gestor de Foros de Discusión" 
+          @click="abrirGestorForos"
+        ></v-btn>
 
   </v-btn-toggle>
 
@@ -561,23 +560,204 @@
             </row>
           </v-container>
 
-          <!-- Modal para Insertar Web / iFrame -->
-          <v-dialog v-model="dialogIframe" max-width="450">
-            <v-card title="Insertar Web / iFrame">
-              <v-card-text>
-                <v-text-field 
-                  v-model="iframeUrl" 
-                  label="URL del sitio web o foro" 
-                  placeholder="https://ejemplo.com" 
-                  density="compact"
-                  hide-details
-                ></v-text-field>
+          <!-- Modal para Gestionar Foros de Discusión -->
+          <v-dialog v-model="dialogForos" max-width="850">
+            <v-card>
+              <v-card-title class="d-flex align-center justify-space-between pa-4 bg-surface-variant">
+                <span class="d-flex align-center text-h6 font-weight-bold">
+                  <v-icon icon="mdi-forum" color="cyan" class="mr-2"></v-icon>
+                  Gestor de Foros de Discusión
+                </span>
+                <div>
+                  <v-btn 
+                    v-if="vistaForo === 'lista'" 
+                    color="cyan" 
+                    prepend-icon="mdi-plus" 
+                    size="small" 
+                    class="mr-2"
+                    @click="nuevoForo"
+                  >
+                    Nuevo Foro
+                  </v-btn>
+                  <v-btn icon="mdi-close" variant="text" density="compact" @click="dialogForos = false"></v-btn>
+                </div>
+              </v-card-title>
+
+              <v-divider></v-divider>
+
+              <v-card-text class="pa-4" style="max-height: 500px; overflow-y: auto;">
+                
+                <!-- VISTA 1: LISTADO DE FOROS -->
+                <div v-if="vistaForo === 'lista'">
+                  <v-progress-linear v-if="cargandoForos" indeterminate color="cyan" class="mb-4"></v-progress-linear>
+
+                 <v-table v-else-if="listaForos.length > 0" density="comfortable" hover>
+  <thead>
+    <tr>
+      <th class="text-left font-weight-bold">ID</th>
+      <th class="text-left font-weight-bold">Título de la Actividad</th>
+      <th class="text-center font-weight-bold">Preguntas</th>
+      <th class="text-center font-weight-bold">Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr v-for="foro in listaForos" :key="foro.id">
+      <td>
+        <v-chip size="x-small" color="cyan" variant="tonal">
+          ID: {{ foro.id }}
+        </v-chip>
+      </td>
+      <td class="font-weight-medium">
+        {{ foro.session_title }}
+      </td>
+      <td class="text-center">
+        <v-chip size="x-small" color="purple" variant="flat">
+          {{ foro.questions ? foro.questions.length : 0 }} Preguntas
+        </v-chip>
+      </td>
+      <td class="text-center">
+        <v-btn 
+          color="success" 
+          size="x-small" 
+          variant="flat" 
+          prepend-icon="mdi-plus" 
+          class="mr-1"
+          title="Insertar este foro en la diapositiva activa"
+          @click="insertarForoEnDiapositiva(foro)"
+        >
+          Insertar
+        </v-btn>
+        <v-btn 
+          color="amber-darken-2" 
+          icon="mdi-pencil" 
+          size="x-small" 
+          variant="tonal" 
+          class="mr-1"
+          title="Editar Foro"
+          @click="editarForo(foro)"
+        ></v-btn>
+        <v-btn 
+          color="error" 
+          icon="mdi-delete" 
+          size="x-small" 
+          variant="tonal" 
+          title="Eliminar Foro"
+          @click="eliminarForo(foro)"
+        ></v-btn>
+      </td>
+    </tr>
+  </tbody>
+</v-table>
+                  <v-alert v-else type="info" variant="tonal" class="my-4">
+                    No hay foros de discusión creados en Supabase. Haz clic en "Nuevo Foro" para agregar uno.
+                  </v-alert>
+                </div>
+
+                <!-- VISTA 2: FORMULARIO CREAR / EDITAR -->
+           <div v-else-if="vistaForo === 'formulario'">
+  <div class="d-flex align-center mb-3">
+    <v-btn icon="mdi-arrow-left" variant="text" density="compact" @click="vistaForo = 'lista'" class="mr-2"></v-btn>
+    <span class="text-subtitle-1 font-weight-bold">
+      {{ foroForm.id ? 'Editar Foro' : 'Crear Nuevo Foro' }}
+    </span>
+  </div>
+
+  <v-row dense>
+    <v-col cols="12" sm="4">
+      <v-text-field 
+      v-model="foroForm.session_title"
+        placeholder="Ej: M1, CLASE-03" 
+        variant="outlined" 
+        density="compact"
+      ></v-text-field>
+    </v-col>
+    
+    <v-col cols="12" sm="8">
+      <v-text-field 
+        v-model="foroForm.session_title" 
+        label="Título del Foro / Actividad *" 
+        placeholder="Ej: Debate sobre Inteligencia Artificial" 
+        variant="outlined" 
+        density="compact"
+      ></v-text-field>
+    </v-col>
+
+    <v-col cols="12">
+      <v-textarea 
+        v-model="foroForm.session_instructions" 
+        label="Instrucciones para los Estudiantes" 
+        placeholder="Escribe aquí las instrucciones breves o contexto..." 
+        variant="outlined" 
+        density="compact" 
+        rows="3"
+      ></v-textarea>
+    </v-col>
+
+    <!-- Campo de Video de YouTube -->
+    <v-col cols="12">
+      <v-text-field 
+        v-model="foroForm.youtube_url" 
+        label="URL del Video de YouTube (opcional)" 
+        placeholder="https://www.youtube.com/watch?v=..." 
+        prepend-inner-icon="mdi-youtube"
+        variant="outlined" 
+        density="compact"
+      ></v-text-field>
+    </v-col>
+  </v-row>
+
+  <v-divider class="my-3"></v-divider>
+
+  <!-- Sección Dinámica de Preguntas -->
+  <div class="d-flex align-center justify-space-between mb-2">
+    <span class="text-subtitle-2 font-weight-bold">Preguntas del Caso / Foro</span>
+    <v-btn
+      size="x-small"
+      color="primary"
+      variant="tonal"
+      prepend-icon="mdi-plus"
+      @click="agregarPreguntaLocal"
+    >
+      Agregar Pregunta
+    </v-btn>
+  </div>
+
+  <div v-if="!foroForm.questions || foroForm.questions.length === 0" class="text-caption text-grey italic mb-3">
+    No hay preguntas agregadas a este caso. Haz clic en "Agregar Pregunta" para añadir una.
+  </div>
+
+  <div 
+    v-for="(q, idx) in foroForm.questions" 
+    :key="idx" 
+    class="d-flex align-center ga-2 mb-2"
+  >
+    <v-text-field
+      v-model="q.question_text"
+      :label="'Pregunta #' + (idx + 1)"
+      variant="outlined"
+      density="compact"
+      hide-details
+    ></v-text-field>
+    
+    <v-btn
+      icon="mdi-delete"
+      color="error"
+      variant="text"
+      size="small"
+      @click="eliminarPreguntaLocal(idx)"
+    ></v-btn>
+  </div>
+
+  <!-- Botones de Acción -->
+  <div class="d-flex justify-end mt-4">
+    <v-btn variant="text" class="mr-2" @click="vistaForo = 'lista'">Cancelar</v-btn>
+    <v-btn color="cyan" variant="flat" :loading="guardandoForo" @click="guardarForo">
+      {{ foroForm.id ? 'Actualizar Foro' : 'Guardar y Listar' }}
+    </v-btn>
+  </div>
+</div>
+
               </v-card-text>
-              <v-card-actions class="pa-4">
-                <v-spacer></v-spacer>
-                <v-btn variant="text" @click="dialogIframe = false">Cancelar</v-btn>
-                <v-btn color="cyan" variant="flat" @click="confirmarInsertarIframe">Insertar</v-btn>
-              </v-card-actions>
             </v-card>
           </v-dialog>
 
@@ -594,7 +774,6 @@
               </v-card-actions>
             </v-card>
           </v-dialog>
-          
           
         </v-main>
 
@@ -784,78 +963,223 @@
           insertarEnCursor(plantilla);
         };
 
-        // const insertarIframe = () => {
-        //   const url = prompt("URL del foro o página web:", "https://");
-        //   if (url) {
-        //     insertarEnCursor(`\n<iframe data-src="${url}" width="100%" height="800px" style="border:none;"></iframe>\n`);
-        //   }
-        // };
+        // --- GESTIÓN DE FOROS DE DISCUSIÓN EN SUPABASE ---
+        const dialogForos = ref(false);
+        const vistaForo = ref('lista'); // 'lista' o 'formulario'
+        const listaForos = ref([]);
+        const cargandoForos = ref(false);
+        const guardandoForo = ref(false);
+        const foroForm = ref({
+          id: null,
+          session_title: '',
+          session_instructions: '',
+          youtube_url: '',
+          questions: []
+        });
 
-        // Estados reactivos para el modal de iFrame
-        const dialogIframe = ref(false);
-        const iframeUrl = ref('');
-
-        // Abrir modal al hacer clic en el botón
-        const insertarIframe = () => {
-          iframeUrl.value = 'https://';
-          dialogIframe.value = true;
+        const abrirGestorForos = async () => {
+          dialogForos.value = true;
+          vistaForo.value = 'lista';
+          await cargarForos();
         };
 
-        // Confirmar e insertar el iFrame en el editor
-        const confirmarInsertarIframe = () => {
-          if (!iframeUrl.value.trim()) return;
+        const cargarForos = async () => {
+          cargandoForos.value = true;
+          try {
+            // 1. Obtener todas las sesiones / casos
+            const {data: sessions, error: errorSessions} = await supabaseClient
+              .from('case_study_sessions')
+              .select('id, title, instructions, youtube_url')
+              .order('id', {ascending: true});
 
-          let url = iframeUrl.value.trim();
-          if (!/^https?:\/\//i.test(url)) {
-            url = 'https://' + url;
+            if (errorSessions) throw errorSessions;
+
+            // 2. Obtener todas las preguntas relacionadas
+            const {data: questions, error: errorQuestions} = await supabaseClient
+              .from('case_study_questions')
+              .select('id, session_id, question_text, order_index')
+              .order('order_index', {ascending: true});
+
+            if (errorQuestions) throw errorQuestions;
+
+            // 3. Mapear los datos unificando preguntas por sesión
+            listaForos.value = (sessions || []).map(session => {
+              const preguntasSesion = (questions || []).filter(q => q.session_id === session.id);
+              return {
+                id: session.id,
+                session_title: session.title,
+                session_instructions: session.instructions,
+                youtube_url: session.youtube_url,
+                questions: preguntasSesion
+              };
+            });
+          } catch (err) {
+            console.error('Error al cargar foros:', err.message);
+            alert('Error al cargar foros: ' + err.message);
+          } finally {
+            cargandoForos.value = false;
+          }
+        };
+        const nuevoForo = () => {
+          foroForm.value = {
+            id: null,
+            session_title: '',
+            session_instructions: '',
+            youtube_url: '',
+            questions: [] // Arreglo vacío para nuevas preguntas
+          };
+          vistaForo.value = 'formulario';
+        };
+
+        const editarForo = (foro) => {
+          foroForm.value = {
+            id: foro.id,
+            session_title: foro.session_title || '',
+            session_instructions: foro.session_instructions || '',
+            youtube_url: foro.youtube_url || '',
+            // Clonamos las preguntas existentes
+            questions: JSON.parse(JSON.stringify(foro.questions || []))
+
+          };
+          vistaForo.value = 'formulario';
+        };
+
+        // Funciones para añadir y quitar preguntas en la interfaz local
+        const agregarPreguntaLocal = () => {
+          foroForm.value.questions.push({
+            id: null,
+            question_text: ''
+          });
+        };
+
+        const eliminarPreguntaLocal = (index) => {
+          foroForm.value.questions.splice(index, 1);
+        };
+
+
+        const guardarForo = async () => {
+          if (!foroForm.value.session_title.trim()) {
+            alert('Por favor asigna un título a la actividad.');
+            return;
           }
 
-          insertarEnCursor(`\n<iframe data-src="${url}" width="100%" height="800px" style="border:none;"></iframe>\n`);
-          dialogIframe.value = false;
-          iframeUrl.value = '';
+          guardandoForo.value = true;
+          try {
+            // 1. Preparar datos de la sesión (sin is_active y agregando youtube_url)
+            const payload = {
+              title: foroForm.value.session_title.trim(),
+              instructions: foroForm.value.session_instructions.trim(),
+              youtube_url: foroForm.value.youtube_url ? foroForm.value.youtube_url.trim() : null
+            };
+
+            if (foroForm.value.id) {
+              payload.id = foroForm.value.id;
+            }
+
+            // 2. Guardar o actualizar la sesión y obtener el registro insertado/actualizado
+            const {data: sessionData, error: sessionError} = await supabaseClient
+              .from('case_study_sessions')
+              .upsert(payload)
+              .select()
+              .single();
+
+            if (sessionError) throw sessionError;
+
+            const sessionId = sessionData.id;
+
+            // 3. Eliminar preguntas anteriores vinculadas a este caso para resincronizar
+            const {error: deleteError} = await supabaseClient
+              .from('case_study_questions')
+              .delete()
+              .eq('session_id', sessionId);
+
+            if (deleteError) throw deleteError;
+
+            // 4. Preparar e insertar las nuevas preguntas asignadas en el formulario
+            if (foroForm.value.questions && foroForm.value.questions.length > 0) {
+              const preguntasParaInsertar = foroForm.value.questions
+                .filter(q => q.question_text && q.question_text.trim() !== '')
+                .map((q, index) => ({
+                  // Generamos un ID único si no existe o viene nulo
+                  id: q.id || crypto.randomUUID(),
+                  session_id: sessionId,
+                  question_text: q.question_text.trim(),
+                  order_index: index + 1
+                }));
+
+              if (preguntasParaInsertar.length > 0) {
+                const {error: questionsError} = await supabaseClient
+                  .from('case_study_questions')
+                  .insert(preguntasParaInsertar);
+
+                if (questionsError) throw questionsError;
+              }
+            }
+
+            // 5. Finalizar, recargar lista y volver a la vista 'lista'
+            await cargarForos();
+            vistaForo.value = 'lista';
+          } catch (err) {
+            console.error('Error al guardar el foro:', err);
+            alert('Error al guardar el foro: ' + err.message);
+          } finally {
+            guardandoForo.value = false;
+          }
+        };
+
+
+        const eliminarForo = async (foro) => {
+          const conf = confirm(`¿Estás seguro de eliminar el foro "${foro.session_title}"?`);
+          if (!conf) return;
+
+          try {
+            const {error} = await supabaseClient
+              .from('case_study_sessions')
+              .delete()
+              .eq('id', foro.id);
+
+            if (error) throw error;
+
+            listaForos.value = listaForos.value.filter(f => f.id !== foro.id);
+          } catch (err) {
+            alert('Error al eliminar el foro: ' + err.message);
+          }
+        };
+
+        const insertarForoEnDiapositiva = (foro) => {
+          const currentPath = window.location.pathname.substring(
+            0,
+            window.location.pathname.lastIndexOf('/') + 1
+          );
+
+          // Construye la URL relativa hacia el foro index_5.html apuntando al ID de sesión específico
+          const forumUrl = `${window.location.origin}${currentPath}index_5.html?session=${foro.id}`;
+
+          const iframeSnippet = `\n<iframe data-src="${forumUrl}" width="100%" height="800px" style="border:none;"></iframe>\n`;
+          insertarEnCursor(iframeSnippet);
+          dialogForos.value = false;
         };
 
         const listaPresentaciones = ref([]);
         const selectedPresentationId = ref(null);
         const cargandoLista = ref(false);
 
-        // const obtenerPresentaciones = async () => {
-        //   cargandoLista.value = true;
-        //   try {
-        //     const {data, error} = await supabaseClient
-        //       .from('presentations')
-        //       .select('id, title, content_markdown, theme_config')
-        //       .order('updated_at', {ascending: false});
-
-        //     if (error) throw error;
-
-
-        //     listaPresentaciones.value = data || [];
-        //   } catch (err) {
-        //     console.error('Error al listar presentaciones:', err.message);
-        //   } finally {
-        //     cargandoLista.value = false;
-        //   }
-        // };
-
         const obtenerPresentaciones = async () => {
           cargandoLista.value = true;
           try {
             const {data, error} = await supabaseClient
               .from('presentations')
-              .select('id, title, content_markdown, theme_config, course') // <-- Agregado course[cite: 2]
-              .order('course', {ascending: true}) // <-- Ordenar por curso
+              .select('id, title, content_markdown, theme_config, course')
+              .order('course', {ascending: true})
               .order('updated_at', {ascending: false});
 
             if (error) throw error;
 
-            // Asigna 'Sin Curso' a las presentaciones antiguas que no tengan curso asignado
             listaPresentaciones.value = (data || []).map(item => ({
               ...item,
               course: item.course || 'Sin Curso'
             }));
 
-            // Extrae cursos únicos dinámicamente para autocompletar el v-combobox
             const cursosUnicos = [...new Set(listaPresentaciones.value.map(p => p.course))];
             if (cursosUnicos.length > 0) {
               listaCursos.value = cursosUnicos;
@@ -873,7 +1197,7 @@
 
           currentId.value = item.id;
           presentationTitle.value = item.title;
-          currentCourse.value = item.course || 'General'; // <-- Asigna el curso guardado[cite: 2]
+          currentCourse.value = item.course || 'General';
           markdownText.value = item.content_markdown;
 
           if (item.theme_config?.gradient !== undefined) {
@@ -891,7 +1215,6 @@
           actualizarReveal();
         };
 
-        // Guardar Presentación (Incluyendo Tipografía y Gradiente en theme_config)
         const guardarPresentacion = async () => {
           if (!presentationTitle.value.trim()) {
             alert('Por favor asigna un nombre al archivo.');
@@ -907,7 +1230,7 @@
 
             const payload = {
               title: presentationTitle.value.trim(),
-              course: currentCourse.value.trim() || 'General', // <-- Guardar el curso[cite: 2]
+              course: currentCourse.value.trim() || 'General',
               content_markdown: markdownText.value,
               theme_config: themeConfig,
               is_published: true,
@@ -929,7 +1252,8 @@
               currentId.value = data[0].id;
             }
 
-            alert(`¡Proyecto "${presentationTitle.value}" guardado correctamente en la carpeta "${currentCourse.value}"!`); await obtenerPresentaciones();
+            alert(`¡Proyecto "${presentationTitle.value}" guardado correctamente en la carpeta "${currentCourse.value}"!`);
+            await obtenerPresentaciones();
           } catch (err) {
             alert('Error al guardar: ' + err.message);
           } finally {
@@ -1005,7 +1329,6 @@
           {name: 'Morado', value: 'linear-gradient(135deg, #ffc695 0.000%, #636676 50.000%, #001426 100.000%)'},
           {name: 'Azul', value: ' linear-gradient(135deg, #000032 0.000%, #184664 50.000%, #4eb490 100.000%)'},
           {name: 'Azul_Dos', value: 'linear-gradient(0deg, #0a0000 0.000%, #250a26 25.000%, #49457a 50.000%, #767baa 75.000%, #aba9b5 100.000%)'}
-
         ]);
 
         const selectedGradient = ref(0);
@@ -1074,14 +1397,11 @@
 
           const tituloEncoded = encodeURIComponent(presentationTitle.value.trim());
 
-          // 1. Obtiene la ruta de la carpeta actual donde se ejecuta index.html
-          // (por ejemplo: '/gbda412/' en GH Pages o '/home/lui/Documents/slidesEditor/' en local)
           const currentPath = window.location.pathname.substring(
             0,
             window.location.pathname.lastIndexOf('/') + 1
           );
 
-          // 2. Construye la URL combinando el origen y la ruta relativa
           const urlVisor = `${window.location.origin}${currentPath}viewer.html?title=${tituloEncoded}`;
 
           window.open(urlVisor, '_blank');
@@ -1095,13 +1415,11 @@
 
           const tituloEncoded = encodeURIComponent(presentationTitle.value.trim());
 
-          // Obtiene la ruta actual donde reside el editor
           const currentPath = window.location.pathname.substring(
             0,
             window.location.pathname.lastIndexOf('/') + 1
           );
 
-          // Construye la URL relativa limpia apuntando a viewer.html
           const urlViewer = `${window.location.origin}${currentPath}viewer.html?title=${tituloEncoded}`;
 
           const iframeCode = `<iframe src="${urlViewer}" width="100%" height="500px" style="border: none; border-radius: 8px;" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>`;
@@ -1114,7 +1432,6 @@
           });
         };
 
-        // Función genérica para envolver el texto seleccionado con <mark>
         const insertarMark = (color = null) => {
           const textarea = editorRef.value?.$el?.querySelector('textarea') || editorRef.value;
           if (!textarea) return;
@@ -1123,14 +1440,11 @@
           const end = textarea.selectionEnd;
           const textoSeleccionado = markdownText.value.substring(start, end);
 
-          // Si no hay texto seleccionado, usa un texto por defecto
           const contenido = textoSeleccionado || 'Texto destacado';
 
-          // Construye el tag con o sin estilo de color
           const estiloColor = color ? ` style="background-color: ${color}; color: #000;"` : '';
           const etiquetaMark = `<mark${estiloColor}>${contenido}</mark>`;
 
-          // Reemplaza o inserta en la posición del cursor
           markdownText.value =
             markdownText.value.substring(0, start) +
             etiquetaMark +
@@ -1139,7 +1453,6 @@
           actualizarReveal();
         };
 
-        // Función para cambiar el tamaño del texto usando clases de Reveal
         const cambiarTamanoTexto = (claseTamano) => {
           const textarea = editorRef.value?.$el?.querySelector('textarea') || editorRef.value;
           if (!textarea) return;
@@ -1149,14 +1462,12 @@
           const textoSeleccionado = markdownText.value.substring(start, end).trim();
 
           if (textoSeleccionado) {
-            // Siempre envuelve en un <div> dejando saltos de línea para que Markdown no falle
             const textoConClase = `<div class="${claseTamano}">\n\n${textoSeleccionado}\n\n</div>`;
             markdownText.value =
               markdownText.value.substring(0, start) +
               textoConClase +
               markdownText.value.substring(end);
           } else {
-            // Plantilla por defecto si no hay selección
             const textoBase = `\n<div class="${claseTamano}">\n\nTexto de ejemplo...\n\n</div>\n`;
             insertarEnCursor(textoBase);
           }
@@ -1164,21 +1475,17 @@
           actualizarReveal();
         };
 
-        // Filtra las presentaciones basadas en el curso seleccionado en el v-combobox
         const presentacionesFiltradas = computed(() => {
           if (!currentCourse.value) {
             return listaPresentaciones.value;
           }
 
-          // Si el valor del combobox es un objeto o un string, obtenemos el texto limpio
           const cursoSeleccionado = typeof currentCourse.value === 'object'
             ? currentCourse.value.title || ''
             : currentCourse.value;
 
           return listaPresentaciones.value.filter(p => p.course === cursoSeleccionado);
         });
-
-        // //////////
 
         const actualizarReveal = () => {
           let slideIndex = 0;
@@ -1194,8 +1501,6 @@
               }
             }
           }
-
-
 
           nextTick(() => {
             if (revealInstance) revealInstance.destroy();
@@ -1215,23 +1520,16 @@
               keyboardCondition: 'focused',
               center: true,
               slideNumber: 'c/t',
-              // controls: true,
               controlsBackArrows: 'visible',
               progress: true,
               controlsLayout: 'edges',
               overview: true,
-              // previewLinks: true,
               autoAnimate: true,
               width: 1280,
               height: 720,
-
-              // Factor de escala: reduce el margen alrededor de la diapositiva
-              margin: 0.02, // Valor por defecto es 0.1 (al bajarlo a 0.02 ganas mucho espacio)
-
-              // Límites de escalado para pantallas grandes
+              margin: 0.02,
               minScale: 0.2,
               maxScale: 2.0,
-
             });
 
             revealInstance.initialize().then(() => {
@@ -1290,10 +1588,6 @@
           insertarYouTube,
           insertarDosColumnas,
           abrirVisorNuevaPestana,
-          dialogIframe,
-          iframeUrl,
-          insertarIframe,
-          confirmarInsertarIframe,
           copiarIframeViewer,
           insertarMark,
           guardarPresentacion,
@@ -1301,7 +1595,22 @@
           currentCourse,
           listaCursos,
           presentacionesFiltradas,
-          actualizarReveal
+          actualizarReveal,
+          // Propiedades y métodos del Gestor de Foros
+          dialogForos,
+          vistaForo,
+          listaForos,
+          cargandoForos,
+          guardandoForo,
+          foroForm,
+          abrirGestorForos,
+          nuevoForo,
+          editarForo,
+          guardarForo,
+          eliminarForo,
+          agregarPreguntaLocal,
+          eliminarPreguntaLocal,
+          insertarForoEnDiapositiva
         };
       }
     };
