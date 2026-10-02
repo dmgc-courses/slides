@@ -26,6 +26,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/inline-code@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/editorjs-text-alignment-blocktune@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/editorjs-text-color-plugin@2.0.4/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@latest"></script>
   <!-- Plugin de Columnas para Editor.js -->
   <!-- Reemplaza el script de columnas en el <head> por este: -->
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/raw@latest"></script>
@@ -340,14 +341,24 @@
 
         switch (block.type) {
           // ---> CASO DE COLUMNAS <---
-          case 'columns':
-            const cols = block.data?.cols || [];
-            const renderedCols = cols.map(colData => {
-              // Procesa de forma recursiva los bloques dentro de cada columna
-              const colContent = editorJsToHtml(colData);
-              return `<div class="editor-column">${colContent}</div>`;
+          // case 'columns':
+          //   const cols = block.data?.cols || [];
+          //   const columnsHtml = cols.map(col => {
+          //     // Procesa de forma recursiva los bloques dentro de cada columna
+          //     const colContent = editorJsToHtml({ blocks: col.blocks || [] });
+          //     return `<div class="editor-column">${colContent}</div>`;
+          //   }).join('');
+
+          //   return `<div class="editor-columns-container">${columnsHtml}</div>`;
+
+          case 'table':
+            const content = block.data?.content || [];
+            const rowsHtml = content.map(row => {
+              const cellsHtml = row.map(cell => `<td>${cell || ''}</td>`).join('');
+              return `<tr>${cellsHtml}</tr>`;
             }).join('');
-            return `<div class="editor-columns-container">${renderedCols}</div>`;
+
+            return `<table class="invisible-table">${rowsHtml}</table>`;
 
           case 'header':
             return `<h${block.data?.level || 2} ${alignStyle}>${block.data?.text || ''}</h${block.data?.level || 2}>`;
@@ -487,6 +498,28 @@
                     :disabled="slides.length <= 1"
                     @click="eliminarDiapositivaActual"
                   ></v-btn>
+
+
+                  <!-- Agrega esto junto al botón de agregar (+) y eliminar (-) -->
+<v-btn 
+  icon="mdi-chevron-left" 
+  size="small" 
+  color="info" 
+  variant="tonal" 
+  title="Mover Diapositiva a la Izquierda" 
+  :disabled="activeSlideIndex === 0"
+  @click="moverDiapositivaIzquierda"
+></v-btn>
+
+<v-btn 
+  icon="mdi-chevron-right" 
+  size="small" 
+  color="info" 
+  variant="tonal" 
+  title="Mover Diapositiva a la Derecha" 
+  :disabled="activeSlideIndex === slides.length - 1"
+  @click="moverDiapositivaDerecha"
+></v-btn>
                 </div>
 
                 <!-- Personalización de Tema / Estilos -->
@@ -777,8 +810,8 @@
             return;
           }
 
-          // Construir la URL completa apuntando a viewer.html
-          const urlViewer = `${window.location.origin}${window.location.pathname.replace('index.html', '')}viewer.html?title=${encodeURIComponent(presentationTitle.value.trim())}`;
+          // Construir la URL completa apuntando a viewer_new.html
+          const urlViewer = `${window.location.origin}${window.location.pathname.replace('index.html', '')}viewer_new.html?title=${encodeURIComponent(presentationTitle.value.trim())}`;
 
           // Generar la etiqueta iframe
           iframeCode.value = `<iframe src="${urlViewer}" width="100%" height="500px" frameborder="0" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>`;
@@ -827,6 +860,14 @@
             };
           }
 
+          // Define las herramientas que estarán disponibles dentro de las columnas
+          const columnTools = {
+            header: Header,
+            list: NestedList,
+            image: ImageTool,
+            quote: Quote
+          };
+
           editorInstance = new EditorJS({
             holder: 'editorjs-holder',
             data: cleanData,
@@ -846,6 +887,15 @@
               raw: {
                 class: RawTool,
                 placeholder: '<div class="editor-columns-container">\n  <div class="editor-column">Columna 1</div>\n  <div class="editor-column">Columna 2</div>\n</div>'
+              },
+
+              table: {
+                class: Table,
+                inlineToolbar: true,
+                config: {
+                  rows: 1,
+                  cols: 2,
+                },
               },
 
               header: {
@@ -975,10 +1025,15 @@
         });
 
         const agregarDiapositiva = async () => {
-          slides.value.push({
-            blocks: [{ type: 'header', data: { text: `Nueva Diapositiva ${slides.value.length + 1}`, level: 2 } }]
-          });
-          activeSlideIndex.value = slides.value.length - 1;
+          const nuevaSlide = {
+            blocks: [{ type: 'header', data: { text: `Nueva Diapositiva`, level: 2 } }]
+          };
+
+          // Inserta la nueva diapositiva justo después del índice activo
+          slides.value.splice(activeSlideIndex.value + 1, 0, nuevaSlide);
+
+          // Cambia el enfoque a la nueva diapositiva recién creada
+          activeSlideIndex.value = activeSlideIndex.value + 1;
         };
 
         const eliminarDiapositivaActual = () => {
@@ -989,6 +1044,22 @@
           } else {
             inicializarEditorJS(slides.value[activeSlideIndex.value]);
             actualizarReveal();
+          }
+        };
+
+        const moverDiapositivaIzquierda = () => {
+          if (activeSlideIndex.value > 0) {
+            const slideActual = slides.value.splice(activeSlideIndex.value, 1)[0];
+            slides.value.splice(activeSlideIndex.value - 1, 0, slideActual);
+            activeSlideIndex.value--;
+          }
+        };
+
+        const moverDiapositivaDerecha = () => {
+          if (activeSlideIndex.value < slides.value.length - 1) {
+            const slideActual = slides.value.splice(activeSlideIndex.value, 1)[0];
+            slides.value.splice(activeSlideIndex.value + 1, 0, slideActual);
+            activeSlideIndex.value++;
           }
         };
 
@@ -1215,7 +1286,7 @@
 
         const abrirVisorNuevaPestana = () => {
           if (!presentationTitle.value.trim()) return alert('Asigna un nombre al proyecto primero.');
-          const urlVisor = `viewer.html?title=${encodeURIComponent(presentationTitle.value.trim())}`;
+          const urlVisor = `viewer_new.html?title=${encodeURIComponent(presentationTitle.value.trim())}`;
           window.open(urlVisor, '_blank');
         };
 
@@ -1250,6 +1321,8 @@
           selectedGradient,
           agregarDiapositiva,
           eliminarDiapositivaActual,
+          moverDiapositivaIzquierda,
+          moverDiapositivaDerecha,
           guardarPresentacion,
           cargarPresentacionSeleccionada,
           currentId,             // <--- Para que funcione el v-if="currentId"
