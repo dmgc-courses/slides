@@ -27,6 +27,10 @@
   <script src="https://cdn.jsdelivr.net/npm/editorjs-text-alignment-blocktune@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/editorjs-text-color-plugin@2.0.4/dist/bundle.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@latest"></script>
+  <script src="  https://cdn.jsdelivr.net/npm/@calumk/editorjs-columns@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/editorjs-font-size-plugin@latest/dist/bundle.js"></script>
+
+
   <!-- Plugin de Columnas para Editor.js -->
   <!-- Reemplaza el script de columnas en el <head> por este: -->
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/raw@latest"></script>
@@ -298,6 +302,16 @@
       cursor: pointer;
       font-weight: 600;
     }
+
+
+
+    .ce-toolbar__actions {
+      background: transparent !important;
+    }
+
+    .font-size-option {
+      color: black;
+    }
   </style>
 </head>
 
@@ -328,68 +342,72 @@
 
     // --- Parser Liviano: Editor.js JSON -> HTML para Reveal.js ---
     // --- Parser Liviano: Editor.js JSON -> HTML para Reveal.js ---
+    // Busca esta línea o inicio de la función en tu código:
     function editorJsToHtml(editorData) {
       if (!editorData || !editorData.blocks || !Array.isArray(editorData.blocks)) return '';
 
       return editorData.blocks.map(block => {
         if (!block) return '';
 
-        // Mover aquí la extracción de alineación para que lea el 'block' activo de la iteración
         const align = block.tunes?.alignmentTune?.alignment || block.data?.alignment || 'left';
         const alignStyle = `style="text-align: ${align} !important;"`;
 
+        // 💡 FUNCIÓN AUXILIAR PARA AÑADIR target="_blank" A LOS LINKS 💡
+        const formatLinks = (htmlText) => {
+          if (!htmlText) return '';
+          // Reemplaza <a href="..."> por <a target="_blank" rel="noopener noreferrer" href="...">
+          return htmlText.replace(/<a\s+(?:[^>]*?\s+)?href=/gi, '<a target="_blank" rel="noopener noreferrer" href=');
+        };
 
         switch (block.type) {
-          // ---> CASO DE COLUMNAS <---
-          // case 'columns':
-          //   const cols = block.data?.cols || [];
-          //   const columnsHtml = cols.map(col => {
-          //     // Procesa de forma recursiva los bloques dentro de cada columna
-          //     const colContent = editorJsToHtml({ blocks: col.blocks || [] });
-          //     return `<div class="editor-column">${colContent}</div>`;
-          //   }).join('');
+          case 'columns':
+            const cols = block.data?.cols || [];
+            const columnsHtml = cols.map(col => {
+              const colContent = editorJsToHtml({ blocks: col.blocks || [] });
+              return `<div class="editor-column">${colContent}</div>`;
+            }).join('');
 
-          //   return `<div class="editor-columns-container">${columnsHtml}</div>`;
+            return `<div class="editor-columns-container">${columnsHtml}</div>`;
 
           case 'table':
             const content = block.data?.content || [];
             const rowsHtml = content.map(row => {
-              const cellsHtml = row.map(cell => `<td>${cell || ''}</td>`).join('');
+              const cellsHtml = row.map(cell => `<td>${formatLinks(cell || '')}</td>`).join('');
               return `<tr>${cellsHtml}</tr>`;
             }).join('');
 
             return `<table class="invisible-table">${rowsHtml}</table>`;
 
           case 'header':
-            return `<h${block.data?.level || 2} ${alignStyle}>${block.data?.text || ''}</h${block.data?.level || 2}>`;
+            return `<h${block.data?.level || 2} ${alignStyle}>${formatLinks(block.data?.text || '')}</h${block.data?.level || 2}>`;
 
           case 'paragraph':
             const textWithBreaks = (block.data?.text || '').replace(/\n/g, '<br>');
-            return `<p ${alignStyle}>${textWithBreaks}</p>`;
+            return `<p ${alignStyle}>${formatLinks(textWithBreaks)}</p>`;
 
           case 'list':
             const tag = block.data?.style === 'ordered' ? 'ol' : 'ul';
             const renderItems = (items) => items.map(item => {
               const text = typeof item === 'string' ? item : (item.content || '');
               const subItems = item.items && item.items.length > 0 ? `<${tag}>${renderItems(item.items)}</${tag}>` : '';
-              return `<li>${text}${subItems}</li>`;
+              return `<li>${formatLinks(text)}${subItems}</li>`;
             }).join('');
             return `<${tag} ${alignStyle}>${renderItems(block.data?.items || [])}</${tag}>`;
 
           case 'image':
             const imgUrl = block.data?.file?.url || '';
             if (!imgUrl) return '';
-            const caption = block.data?.caption ? `<figcaption>${block.data.caption}</figcaption>` : '';
+            const caption = block.data?.caption ? `<figcaption>${formatLinks(block.data.caption)}</figcaption>` : '';
             return `<figure ${alignStyle}><img src="${imgUrl}" style="max-height: 400px; margin: 0 auto; display: block;" />${caption}</figure>`;
 
           case 'embed':
             return `<iframe data-src="${block.data?.embed || ''}" width="100%" height="400px" frameborder="0" allowfullscreen></iframe>`;
 
           case 'quote':
-            return `<blockquote ${alignStyle}>${block.data?.text || ''} <cite>${block.data?.caption || ''}</cite></blockquote>`;
+            return `<blockquote ${alignStyle}>${formatLinks(block.data?.text || '')} <cite>${formatLinks(block.data?.caption || '')}</cite></blockquote>`;
 
           case 'raw':
-            return block.data?.html || '';
+            return formatLinks(block.data?.html || '');
 
           default:
             return '';
@@ -686,9 +704,19 @@
               <!-- Columna Vista Previa Reveal.js -->
               <v-col cols="12" md="6">
                 <v-card class="pa-4 fill-height" elevation="3">
-                  <v-card-title class="text-subtitle-1 pa-0 mb-2 d-flex align-center">
-                    <v-icon icon="mdi-eye" class="mr-2"></v-icon> Vista Previa en Vivo
-                  </v-card-title>
+                  <v-card-title class="text-subtitle-1 pa-0 mb-2 d-flex align-center justify-space-between">
+                  <div class="d-flex align-center">
+                    <v-icon icon="mdi-eye" class="mr-2"></v-icon> Vista Previa
+                  </div>
+                  <v-btn 
+                    icon="mdi-refresh" 
+                    size="small" 
+                    color="primary" 
+                    variant="tonal" 
+                    title="Actualizar Vista Previa" 
+                    @click="refrescarPreview"
+                  ></v-btn>
+                </v-card-title>
 
                   <div class="reveal-container">
                     <div class="reveal" ref="revealRef">
@@ -743,6 +771,7 @@
         const pasoModal = ref(1);
         const sessionIdInput = ref('');
         const adminUrlIframe = ref('');
+        const onChangeDebounceTimer = ref(null);
 
         // Abrir el modal desde el botón de la barra de herramientas
         const abrirModalForo = () => {
@@ -868,6 +897,10 @@
             quote: Quote
           };
 
+          const ColumnsTool = window.editorjsColumns || window.EditorJSColumns || editorjsColumns;
+
+          const FontSizeTool = window.FontSizeTool;
+
           editorInstance = new EditorJS({
             holder: 'editorjs-holder',
             data: cleanData,
@@ -883,135 +916,228 @@
                   }
                 }
               },
-              // Herramienta Raw HTML para código y layouts
-              raw: {
-                class: RawTool,
-                placeholder: '<div class="editor-columns-container">\n  <div class="editor-column">Columna 1</div>\n  <div class="editor-column">Columna 2</div>\n</div>'
-              },
 
-              table: {
-                class: Table,
-                inlineToolbar: true,
+              fontSize: {
+                class: FontSizeTool,
+                inlineToolbar: true, // Set to true to display in the inline toolbar
                 config: {
-                  rows: 1,
-                  cols: 2,
+                  fontSizes: [
+                    { size: "0.5rem", label: "Small" },
+                    { size: "1rem", label: "Normal" },
+                    { size: "1.6rem", label: "Medium" },
+                    { size: "2rem", label: "Large" },
+                    { size: "2.5rem", label: "Extra Large" },
+                    { size: "3rem", label: "XXL" },
+                    { size: "3.5rem", label: "XXXL" },
+                    { size: "4rem", label: "Huge" },
+                  ],
+                  defaultSize: "1rem",
                 },
-              },
+                },
 
-              header: {
-                class: Header,
-                shortcut: 'CMD+SHIFT+H',
-                tunes: ['alignmentTune'],
-                config: { levels: [1, 2, 3, 4], defaultLevel: 2 }
-              },
-              list: { class: NestedList, inlineToolbar: true },
-              quote: { class: Quote, inlineToolbar: true, tunes: ['alignmentTune'] },
-              // marker: { class: Marker },
-              // Reemplaza 'marker: { class: Marker }' por esto:
-              // Herramienta 1: Resaltador de Fondo (Marker)
-              Marker: {
-                class: window.ColorPlugin,
-                config: {
-                  colorCollections: ['#FFF066', '#A0FE00', '#00E5FF', '#FFB74D', '#FF80AB'],
-                  type: 'marker',
-                  customPicker: true
-                }
-              },
+                // inlineToolbar: ['bold', 'italic', 'link', 'fontSize'],
 
-              // Herramienta 2: Color de Texto (TextColor)
-              TextColor: {
-                class: window.ColorPlugin,
-                config: {
-                  colorCollections: ['#E53935', '#1E88E5', '#43A047', '#FB8C00', '#8E24AA'],
-                  type: 'text',
-                  customPicker: true
-                }
-              },
+                // Herramienta Raw HTML para código y layouts
+                raw: {
+                  class: RawTool,
+                  placeholder: '<div class="editor-columns-container">\n  <div class="editor-column">Columna 1</div>\n  <div class="editor-column">Columna 2</div>\n</div>'
+                },
 
-              inlineCode: { class: InlineCode },
-              embed: { class: Embed, config: { services: { youtube: true } } },
-              image: {
-                class: ImageTool,
-                config: {
-                  uploader: {
-                    async uploadByFile(file) {
-                      try {
-                        const fileName = `${Date.now()}_${file.name}`;
-                        const { error } = await supabaseClient.storage.from('imagenes-diapositivas').upload(fileName, file);
-                        if (error) throw error;
-                        const { data: publicUrlData } = supabaseClient.storage.from('imagenes-diapositivas').getPublicUrl(fileName);
-                        return { success: 1, file: { url: publicUrlData.publicUrl } };
-                      } catch (err) {
-                        alert('Error al subir imagen: ' + err.message);
-                        return { success: 0 };
+                table: {
+                  class: Table,
+                  inlineToolbar: true,
+                  config: {
+                    rows: 1,
+                    cols: 2,
+                  },
+                },
+
+                // Configuración de editorjs-columns
+                columns: {
+                  class: ColumnsTool,
+                  config: {
+                    tools: {
+                      header: Header,
+                      list: NestedList,
+                      image: {
+                        class: ImageTool,
+                        config: {
+                          uploader: {
+                            async uploadByFile(file) {
+                              try {
+                                const fileName = `${Date.now()}_${file.name}`;
+                                const { error } = await supabaseClient.storage.from('imagenes-diapositivas').upload(fileName, file);
+                                if (error) throw error;
+                                const { data: publicUrlData } = supabaseClient.storage.from('imagenes-diapositivas').getPublicUrl(fileName);
+                                return { success: 1, file: { url: publicUrlData.publicUrl } };
+                              } catch (err) {
+                                alert('Error al subir imagen: ' + err.message);
+                                return { success: 0 };
+                              }
+                            }
+                          }
+                        }
+                      },
+                      quote: Quote
+                    },
+                    EditorJsLibrary: window.EditorJS || EditorJS
+                  }
+                },
+
+                header: {
+                  class: Header,
+                  shortcut: 'CMD+SHIFT+H',
+                  tunes: ['alignmentTune'],
+                  config: { levels: [1, 2, 3, 4], defaultLevel: 2 }
+                },
+                list: { class: NestedList, inlineToolbar: true },
+                quote: { class: Quote, inlineToolbar: true, tunes: ['alignmentTune'] },
+                // marker: { class: Marker },
+                // Reemplaza 'marker: { class: Marker }' por esto:
+                // Herramienta 1: Resaltador de Fondo (Marker)
+                Marker: {
+                  class: window.ColorPlugin,
+                  config: {
+                    colorCollections: ['#FFF066', '#A0FE00', '#00E5FF', '#FFB74D', '#FF80AB'],
+                    type: 'marker',
+                    customPicker: true
+                  }
+                },
+
+                // Herramienta 2: Color de Texto (TextColor)
+                TextColor: {
+                  class: window.ColorPlugin,
+                  config: {
+                    colorCollections: ['#E53935', '#1E88E5', '#43A047', '#FB8C00', '#8E24AA'],
+                    type: 'text',
+                    customPicker: true
+                  }
+                },
+
+                inlineCode: { class: InlineCode },
+                embed: {
+                  class: Embed,
+                  config: { services: { youtube: true } },
+                  inlineToolbar: true,
+                },
+                image: {
+                  class: ImageTool,
+                  config: {
+                    uploader: {
+                      async uploadByFile(file) {
+                        try {
+                          const fileName = `${Date.now()}_${file.name}`;
+                          const { error } = await supabaseClient.storage.from('imagenes-diapositivas').upload(fileName, file);
+                          if (error) throw error;
+                          const { data: publicUrlData } = supabaseClient.storage.from('imagenes-diapositivas').getPublicUrl(fileName);
+                          return { success: 1, file: { url: publicUrlData.publicUrl } };
+                        } catch (err) {
+                          alert('Error al subir imagen: ' + err.message);
+                          return { success: 0 };
+                        }
                       }
                     }
                   }
                 }
-              }
-            },
-            // Habilitar la alineación por defecto para todos los bloques comunes
-            tunes: ['alignmentTune'],
-            onChange: async () => {
-              const savedData = await editorInstance.save();
-              slides.value[activeSlideIndex.value] = savedData;
-              actualizarReveal();
-            }
-          });
+              },
+              // Habilitar la alineación por defecto para todos los bloques comunes
+              tunes: ['alignmentTune'],
+              // onChange: async () => {
+              //   if (editorInstance && typeof editorInstance.save === 'function') {
+              //     const savedData = await editorInstance.save();
+              //     // Actualiza los datos reactivos del slide activo
+              //     slides.value[activeSlideIndex.value] = savedData;
+              //     // Sincroniza Reveal.js
+              //     actualizarReveal();
+              //   }
+              // }
+              // ELIMINA O COMENTA ESTE BLOQUE:
+              // onChange: () => {
+              //   clearTimeout(onChangeDebounceTimer.value);
+              //   onChangeDebounceTimer.value = setTimeout(async () => {
+              //     if (editorInstance && typeof editorInstance.save === 'function') {
+              //       const savedData = await editorInstance.save();
+              //       slides.value[activeSlideIndex.value] = savedData;
+              //       actualizarReveal();
+              //     }
+              //   }, 800);
+              // }
+            });
+
+
+
+
           // ---> PEGAR AQUÍ (Justo después de instanciar EditorJS y antes de cerrar la función) <---
-          nextTick(() => {
-            const holder = document.getElementById('editorjs-holder');
-            if (holder) {
-              document.addEventListener('click', async (e) => {
-                if (e.target.closest('.ce-popover') || e.target.closest('.ce-toolbar')) {
-                  setTimeout(async () => {
-                    if (editorInstance && typeof editorInstance.save === 'function') {
-                      const savedData = await editorInstance.save();
-                      slides.value[activeSlideIndex.value] = savedData;
-                      actualizarReveal();
-                    }
-                  }, 100);
-                }
-              });
-            }
-          });
+          // nextTick(() => {
+          //   const holder = document.getElementById('editorjs-holder');
+          //   if (holder) {
+          //     document.addEventListener('click', async (e) => {
+          //       if (e.target.closest('.ce-popover') || e.target.closest('.ce-toolbar')) {
+          //         setTimeout(async () => {
+          //           if (editorInstance && typeof editorInstance.save === 'function') {
+          //             const savedData = await editorInstance.save();
+          //             slides.value[activeSlideIndex.value] = savedData;
+          //             actualizarReveal();
+          //           }
+          //         }, 100);
+          //       }
+          //     });
+          //   }
+          // });
         };
 
         // Renderizado e Inicialización de Reveal.js
+        // Renderizado e Inicialización de Reveal.js (Optimizada para evitar pérdida de foco)
         const actualizarReveal = () => {
           const slidesContainer = document.getElementById('slides-container');
           if (!slidesContainer) return;
 
-          // Construye las secciones HTML para cada slide
+          // 1. Construye el HTML de las diapositivas
           const htmlSlides = slides.value.map(slideData => {
             const innerHTML = editorJsToHtml(slideData);
             return `<section>${innerHTML || '<h3>Diapositiva Vacía</h3>'}</section>`;
           }).join('\n');
 
-          slidesContainer.innerHTML = htmlSlides;
+          // 2. Si Reveal.js NO ha sido inicializado previa/únicamente en el arranque:
+          if (!revealInstance) {
+            slidesContainer.innerHTML = htmlSlides;
+            nextTick(() => {
+              revealInstance = new Reveal(revealRef.value, {
+                embedded: true,
+                keyboardCondition: 'focused', // Mantiene los atajos restringidos al visor
+                center: true,
+                slideNumber: 'c/t',
+                controls: true,
+                progress: true,
+                width: 1280,
+                height: 720,
+              });
 
-          nextTick(() => {
-            if (revealInstance) revealInstance.destroy();
-
-            revealInstance = new Reveal(revealRef.value, {
-              embedded: true,
-              keyboardCondition: 'focused',
-              center: true,
-              slideNumber: 'c/t',
-              controls: true,
-              progress: true,
-              width: 1280,
-              height: 720,
+              revealInstance.initialize().then(() => {
+                aplicarEstilo();
+                aplicarTipografia();
+                if (revealInstance && typeof revealInstance.slide === 'function') {
+                  revealInstance.slide(activeSlideIndex.value, 0);
+                }
+              });
             });
+          } else {
+            // 3. Si Reveal YA existe, solo actualizamos el HTML del slide activo en el DOM
+            // Evita destruir Reveal.js y mantiene el focus en Editor.js
+            const currentSlideElement = revealInstance.getCurrentSlide();
+            if (currentSlideElement) {
+              const activeHtml = editorJsToHtml(slides.value[activeSlideIndex.value]);
+              currentSlideElement.innerHTML = activeHtml || '<h3>Diapositiva Vacía</h3>';
 
-            revealInstance.initialize().then(() => {
-              aplicarEstilo();
-              aplicarTipografia();
-              if (revealInstance && typeof revealInstance.slide === 'function') {
-                revealInstance.slide(activeSlideIndex.value, 0);
-              }
-            });
-          });
+              // Sincronizar el diseño interno de Reveal sin re-inicializar el framework
+              revealInstance.sync();
+            } else {
+              // Si la estructura global de diapositivas cambia (p. ej., agregar/quitar diapositivas)
+              slidesContainer.innerHTML = htmlSlides;
+              revealInstance.sync();
+              revealInstance.slide(activeSlideIndex.value, 0);
+            }
+          }
         };
 
         // Cambio de pestaña/slide
@@ -1024,6 +1150,13 @@
           }
         });
 
+        const refrescarPreview = async () => {
+          if (editorInstance && typeof editorInstance.save === 'function') {
+            const savedData = await editorInstance.save();
+            slides.value[activeSlideIndex.value] = savedData;
+            actualizarReveal();
+          }
+        };
         const agregarDiapositiva = async () => {
           const nuevaSlide = {
             blocks: [{ type: 'header', data: { text: `Nueva Diapositiva`, level: 2 } }]
@@ -1034,6 +1167,13 @@
 
           // Cambia el enfoque a la nueva diapositiva recién creada
           activeSlideIndex.value = activeSlideIndex.value + 1;
+
+          // Forzar reconstrucción de estructura cuando cambia el número total de diapositivas
+          if (revealInstance) {
+            revealInstance.destroy();
+            revealInstance = null;
+          }
+          actualizarReveal();
         };
 
         const eliminarDiapositivaActual = () => {
@@ -1041,10 +1181,14 @@
           slides.value.splice(activeSlideIndex.value, 1);
           if (activeSlideIndex.value >= slides.value.length) {
             activeSlideIndex.value = slides.value.length - 1;
-          } else {
-            inicializarEditorJS(slides.value[activeSlideIndex.value]);
-            actualizarReveal();
           }
+
+          if (revealInstance) {
+            revealInstance.destroy();
+            revealInstance = null;
+          }
+          inicializarEditorJS(slides.value[activeSlideIndex.value]);
+          actualizarReveal();
         };
 
         const moverDiapositivaIzquierda = () => {
@@ -1345,7 +1489,8 @@
           abrirModalForo,
           cerrarModalForo,
           irAlPaso2,
-          confirmarEIncrustarForo
+          confirmarEIncrustarForo,
+          refrescarPreview
         };
       }
     };

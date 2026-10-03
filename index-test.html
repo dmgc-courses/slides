@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creador de Diapositivas Reveal.js + Editor.js + Supabase</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Reveal.js CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/black.css" id="theme" />
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Vue.js 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+  <!-- Core de Editor.js y Plugins mediante scripts globales -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editor.js"></script>
+  
+  <!-- Alias de compatibilidad global para librerías que buscan window.Editorjs en lugar de window.EditorJS -->
+  <script>
+    if (window.EditorJS && !window.Editorjs) {
+      window.Editorjs = window.EditorJS;
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/nested-list@1.4.2/dist/nested-list.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/raw@2.5.0/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@2.3.0/dist/table.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/inline-code@1.5.0/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/embed@2.7.0/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/editorjs-text-alignment-blocktune@1.0.3/dist/bundle.js"></script>
+
+  <!-- EditorJS Columns -->
+  <script src="https://cdn.jsdelivr.net/npm/@calumk/editorjs-columns@1.0.1/dist/bundle.js"></script>
+  
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      overflow: hidden;
+    }
+
+    .reveal-viewport {
+      background: transparent !important;
+    }
+
+    .codex-editor {
+      color: #1e293b;
+    }
+    .ce-block__content, .ce-toolbar__content {
+      max-width: 90% !important;
+    }
+    .ce-toolbar__actions {
+      right: -10px !important;
+    }
+    
+    .editor-columns-container {
+      display: flex;
+      gap: 1rem;
+      width: 100%;
+    }
+    .editor-column {
+      flex: 1;
+      min-width: 0;
+      border: 1px dashed #cbd5e1;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+    }
+
+    .slide-preview-container .reveal {
+      font-size: 24px;
+    }
+    .slide-preview-container .reveal h1 { font-size: 2.2em; }
+    .slide-preview-container .reveal h2 { font-size: 1.8em; }
+    .slide-preview-container .reveal h3 { font-size: 1.4em; }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen overflow-hidden">
+
+  <div id="app" class="h-full w-full flex flex-col">
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-presentation-screen text-indigo-500 text-xl"></i>
+        <input 
+          v-model="presentationTitle" 
+          type="text" 
+          class="bg-slate-800 text-slate-100 px-3 py-1 rounded border border-slate-700 focus:outline-none focus:border-indigo-500 font-semibold text-sm w-64"
+          placeholder="Título de la presentación..."
+        />
+      </div>
+
+      <div class="flex items-center gap-2">
+        <select 
+          v-model="selectedTheme" 
+          @change="changeTheme" 
+          class="bg-slate-800 text-slate-200 text-xs px-2 py-1.5 rounded border border-slate-700 focus:outline-none"
+        >
+          <option value="black">Black</option>
+          <option value="white">White</option>
+          <option value="league">League</option>
+          <option value="beige">Beige</option>
+          <option value="night">Night</option>
+          <option value="serif">Serif</option>
+          <option value="simple">Simple</option>
+          <option value="solarized">Solarized</option>
+        </select>
+
+        <button 
+          @click="guardarPresentacion" 
+          class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded flex items-center gap-1.5 transition"
+        >
+          <i class="fa-solid fa-floppy-disk"></i> Guardar
+        </button>
+
+        <button 
+          @click="toggleModoPresentacion" 
+          class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded flex items-center gap-1.5 transition"
+        >
+          <i class="fa-solid fa-play"></i> Presentar
+        </button>
+      </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <div v-show="!modoPresentacion" class="flex-1 flex overflow-hidden">
+      <!-- Barra Lateral: Listado de Diapositivas -->
+      <aside class="w-64 bg-slate-900/50 border-r border-slate-800 flex flex-col shrink-0">
+        <div class="p-3 border-b border-slate-800 flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Diapositivas</span>
+          <button 
+            @click="agregarDiapositiva" 
+            class="text-xs bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-slate-700 px-2 py-1 rounded flex items-center gap-1 transition"
+          >
+            <i class="fa-solid fa-plus"></i> Nueva
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3 space-y-2">
+          <div 
+            v-for="(slide, idx) in slides" 
+            :key="idx"
+            @click="seleccionarDiapositiva(idx)"
+            :class="[
+              'p-2.5 rounded-lg border cursor-pointer transition flex items-center justify-between group',
+              activeSlideIndex === idx 
+                ? 'bg-indigo-950/40 border-indigo-500/50 text-indigo-200' 
+                : 'bg-slate-800/40 border-slate-700/50 text-slate-400 hover:bg-slate-800'
+            ]"
+          >
+            <div class="flex items-center gap-2 overflow-hidden">
+              <span class="text-xs font-mono font-bold w-4 text-slate-500">{{ idx + 1 }}</span>
+              <span class="text-xs truncate font-medium">
+                {{ obtenerTituloDiapositiva(slide) }}
+              </span>
+            </div>
+
+            <button 
+              v-if="slides.length > 1"
+              @click.stop="eliminarDiapositiva(idx)" 
+              class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-red-400 text-xs p-1 transition"
+            >
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Área de Edición -->
+      <main class="flex-1 bg-slate-950 flex flex-col overflow-hidden">
+        <div class="p-2 bg-slate-900 border-b border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+          <span>Editor de Diapositiva #{{ activeSlideIndex + 1 }}</span>
+          <span class="text-slate-500">Formato Editor.js</span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 flex justify-center">
+          <div class="w-full max-w-4xl bg-white text-slate-900 rounded-lg shadow-2xl p-8 min-h-[500px]">
+            <div id="editorjs-holder"></div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Panel Derecho: Vista Previa Reveal.js -->
+      <section class="w-96 bg-slate-900/30 border-l border-slate-800 flex flex-col shrink-0">
+        <div class="p-3 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
+          Vista Previa
+        </div>
+
+        <div class="flex-1 p-4 flex items-center justify-center slide-preview-container bg-slate-950/50">
+          <div class="reveal aspect-video w-full border border-slate-800 rounded bg-black overflow-hidden relative" id="preview-reveal">
+            <div class="slides">
+              <section id="preview-slide-content"></section>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Pantalla Completa: Modo Presentación Reveal.js -->
+    <div v-show="modoPresentacion" class="fixed inset-0 z-50 bg-black">
+      <button 
+        @click="toggleModoPresentacion" 
+        class="absolute top-4 right-4 z-50 bg-slate-800/80 hover:bg-slate-700 text-white p-2 rounded-full border border-slate-600 transition"
+        title="Salir de la presentación (Esc)"
+      >
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="reveal h-full w-full" id="full-reveal">
+        <div class="slides" id="full-slides-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reveal.js JS -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+
+  <script>
+    const { createApp, ref, onMounted, nextTick } = Vue;
+
+    const SUPABASE_URL = 'https://TU_SUPABASE_URL.supabase.co'; 
+    const SUPABASE_KEY = 'TU_SUPABASE_ANON_KEY';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    createApp({
+      setup() {
+        const presentationTitle = ref('Nueva Presentación');
+        const selectedTheme = ref('black');
+        const slides = ref([
+          {
+            blocks: [
+              { type: 'header', data: { text: 'Mi Primera Diapositiva', level: 2 } },
+              { type: 'paragraph', data: { text: 'Bienvenido al creador de diapositivas interactivo.' } }
+            ]
+          }
+        ]);
+        const activeSlideIndex = ref(0);
+        const modoPresentacion = ref(false);
+
+        let editorInstance = null;
+        let previewRevealInstance = null;
+        let fullRevealInstance = null;
+
+        const renderBlockToHTML = (block) => {
+          if (!block || !block.data) return '';
+          
+          const alignClass = block.tunes?.alignmentTune?.alignment 
+            ? `text-${block.tunes.alignmentTune.alignment}` 
+            : 'text-left';
+
+          switch (block.type) {
+            case 'header':
+              return `<h${block.data.level || 2} class="${alignClass}">${block.data.text || ''}</h${block.data.level || 2}>`;
+            case 'paragraph':
+              return `<p class="${alignClass}">${block.data.text || ''}</p>`;
+            case 'list':
+              const tag = block.data.style === 'ordered' ? 'ol' : 'ul';
+              const items = (block.data.items || []).map(i => `<li>${typeof i === 'string' ? i : i.content}</li>`).join('');
+              return `<${tag} class="${alignClass}">${items}</${tag}>`;
+            case 'image':
+              return `<figure><img src="${block.data.file?.url || ''}" alt="${block.data.caption || ''}" /><figcaption>${block.data.caption || ''}</figcaption></figure>`;
+            case 'quote':
+              return `<blockquote class="${alignClass}">${block.data.text || ''}</blockquote>`;
+            case 'raw':
+              return block.data.html || '';
+            case 'embed':
+              return `<div class="embed-container"><iframe src="${block.data.embed}" frameborder="0" allowfullscreen></iframe></div>`;
+            default:
+              return '';
+          }
+        };
+
+        const renderSlideBlocksToHTML = (slideData) => {
+          if (!slideData || !slideData.blocks) return '';
+          return slideData.blocks.map(block => renderBlockToHTML(block)).join('');
+        };
+
+        const actualizarReveal = () => {
+          const container = document.getElementById('preview-slide-content');
+          if (container && slides.value[activeSlideIndex.value]) {
+            container.innerHTML = renderSlideBlocksToHTML(slides.value[activeSlideIndex.value]);
+            if (previewRevealInstance) {
+              previewRevealInstance.sync();
+            }
+          }
+        };
+
+        const inicializarEditorJS = async (dataInicial) => {
+          if (editorInstance && typeof editorInstance.destroy === 'function') {
+            await editorInstance.destroy();
+            editorInstance = null;
+          }
+
+          let cleanData = { blocks: [] };
+          if (dataInicial && dataInicial.blocks) {
+            cleanData = JSON.parse(JSON.stringify(dataInicial));
+            cleanData.blocks = cleanData.blocks.map(block => {
+              if (!block.data) block.data = {};
+              if (block.type === 'paragraph' || block.type === 'header') {
+                if (typeof block.data.text !== 'string') block.data.text = '';
+              }
+              return block;
+            });
+          } else {
+            cleanData = {
+              blocks: [
+                { type: 'header', data: { text: 'Título de la Diapositiva', level: 2 } },
+                { type: 'paragraph', data: { text: '' } }
+              ]
+            };
+          }
+
+          // Uso seguro con fallback de referencias
+          const EditorConstructor = window.EditorJS || window.Editorjs;
+          const HeaderTool = window.Header;
+          const ListTool = window.NestedList;
+          const ImageTool = window.ImageTool;
+          const QuoteTool = window.Quote;
+          const RawTool = window.RawTool;
+          const TableTool = window.Table;
+          const InlineCodeTool = window.InlineCode;
+          const EmbedTool = window.Embed;
+          const AlignmentTuneTool = window.AlignmentBlockTune;
+          const ColumnsTool = window.editorjsColumns;
+
+          const columnTools = {
+            header: HeaderTool,
+            list: ListTool,
+            image: ImageTool,
+            quote: QuoteTool
+          };
+
+          editorInstance = new EditorConstructor({
+            holder: 'editorjs-holder',
+            data: cleanData,
+            placeholder: 'Escribe contenido o presiona "/" para elegir un bloque...',
+            tools: {
+              alignmentTune: {
+                class: AlignmentTuneTool,
+                config: {
+                  default: 'left',
+                  blocks: {
+                    header: 'left',
+                    paragraph: 'left'
+                  }
+                }
+              },
+              raw: {
+                class: RawTool,
+                placeholder: '<div class="editor-columns-container">\n  <div class="editor-column">Columna 1</div>\n  <div class="editor-column">Columna 2</div>\n</div>'
+              },
+              table: {
+                class: TableTool,
+                inlineToolbar: true,
+                config: { rows: 1, cols: 2 }
+              },
+              columns: {
+                class: ColumnsTool,
+                config: {
+                  tools: columnTools,
+                  EditorJS: EditorConstructor
+                }
+              },
+              header: {
+                class: HeaderTool,
+                shortcut: 'CMD+SHIFT+H',
+                tunes: ['alignmentTune'],
+                config: { levels: [1, 2, 3, 4], defaultLevel: 2 }
+              },
+              list: { class: ListTool, inlineToolbar: true },
+              quote: { class: QuoteTool, inlineToolbar: true, tunes: ['alignmentTune'] },
+              inlineCode: { class: InlineCodeTool },
+              embed: { class: EmbedTool, config: { services: { youtube: true } } },
+              image: {
+                class: ImageTool,
+                config: {
+                  uploader: {
+                    async uploadByFile(file) {
+                      try {
+                        const fileName = `${Date.now()}_${file.name}`;
+                        const { error } = await supabaseClient.storage.from('imagenes-diapositivas').upload(fileName, file);
+                        if (error) throw error;
+                        const { data: publicUrlData } = supabaseClient.storage.from('imagenes-diapositivas').getPublicUrl(fileName);
+                        return { success: 1, file: { url: publicUrlData.publicUrl } };
+                      } catch (err) {
+                        alert('Error al subir imagen: ' + err.message);
+                        return { success: 0 };
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            tunes: ['alignmentTune'],
+            onChange: async () => {
+              const savedData = await editorInstance.save();
+              slides.value[activeSlideIndex.value] = savedData;
+              actualizarReveal();
+            }
+          });
+
+          nextTick(() => {
+            const holder = document.getElementById('editorjs-holder');
+            if (holder) {
+              document.addEventListener('click', async (e) => {
+                if (e.target.closest('.ce-popover') || e.target.closest('.ce-toolbar')) {
+                  setTimeout(async () => {
+                    if (editorInstance && typeof editorInstance.save === 'function') {
+                      const savedData = await editorInstance.save();
+                      slides.value[activeSlideIndex.value] = savedData;
+                      actualizarReveal();
+                    }
+                  }, 100);
+                }
+              });
+            }
+          });
+        };
+
+        const seleccionarDiapositiva = async (index) => {
+          if (editorInstance && typeof editorInstance.save === 'function') {
+            const savedData = await editorInstance.save();
+            slides.value[activeSlideIndex.value] = savedData;
+          }
+          activeSlideIndex.value = index;
+          await inicializarEditorJS(slides.value[index]);
+          actualizarReveal();
+        };
+
+        const agregarDiapositiva = async () => {
+          slides.value.push({
+            blocks: [
+              { type: 'header', data: { text: `Diapositiva ${slides.value.length + 1}`, level: 2 } },
+              { type: 'paragraph', data: { text: '' } }
+            ]
+          });
+          await seleccionarDiapositiva(slides.value.length - 1);
+        };
+
+        const eliminarDiapositiva = async (index) => {
+          if (slides.value.length <= 1) return;
+          slides.value.splice(index, 1);
+          const nextIndex = index >= slides.value.length ? slides.value.length - 1 : index;
+          await seleccionarDiapositiva(nextIndex);
+        };
+
+        const obtenerTituloDiapositiva = (slide) => {
+          if (!slide || !slide.blocks) return 'Diapositiva sin título';
+          const headerBlock = slide.blocks.find(b => b.type === 'header');
+          if (headerBlock && headerBlock.data && headerBlock.data.text) {
+            return headerBlock.data.text.replace(/<[^>]*>?/gm, '');
+          }
+          return 'Diapositiva';
+        };
+
+        const changeTheme = (e) => {
+          const themeLink = document.getElementById('theme');
+          if (themeLink) {
+            themeLink.href = `https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/${e.target.value}.css`;
+          }
+        };
+
+        const guardarPresentacion = async () => {
+          try {
+            if (editorInstance && typeof editorInstance.save === 'function') {
+              const savedData = await editorInstance.save();
+              slides.value[activeSlideIndex.value] = savedData;
+            }
+
+            const { data, error } = await supabaseClient
+              .from('presentaciones')
+              .upsert({
+                titulo: presentationTitle.value,
+                contenido: slides.value,
+                tema: selectedTheme.value
+              });
+
+            if (error) throw error;
+            alert('Presentación guardada con éxito');
+          } catch (err) {
+            alert('Error al guardar: ' + err.message);
+          }
+        };
+
+        const toggleModoPresentacion = async () => {
+          modoPresentacion.value = !modoPresentacion.value;
+          if (modoPresentacion.value) {
+            const container = document.getElementById('full-slides-container');
+            container.innerHTML = slides.value.map(slide => `<section>${renderSlideBlocksToHTML(slide)}</section>`).join('');
+            
+            await nextTick();
+            if (!fullRevealInstance) {
+              fullRevealInstance = new Reveal(document.getElementById('full-reveal'), {
+                embedded: false,
+                keyboard: true,
+                controls: true,
+                progress: true
+              });
+              await fullRevealInstance.initialize();
+            } else {
+              fullRevealInstance.sync();
+              fullRevealInstance.slide(activeSlideIndex.value);
+            }
+          }
+        };
+
+        onMounted(async () => {
+          await inicializarEditorJS(slides.value[0]);
+          
+          previewRevealInstance = new Reveal(document.getElementById('preview-reveal'), {
+            embedded: true,
+            keyboard: false,
+            controls: false,
+            progress: false
+          });
+          await previewRevealInstance.initialize();
+          actualizarReveal();
+        });
+
+        return {
+          presentationTitle,
+          selectedTheme,
+          slides,
+          activeSlideIndex,
+          modoPresentacion,
+          agregarDiapositiva,
+          eliminarDiapositiva,
+          seleccionarDiapositiva,
+          obtenerTituloDiapositiva,
+          changeTheme,
+          guardarPresentacion,
+          toggleModoPresentacion
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
