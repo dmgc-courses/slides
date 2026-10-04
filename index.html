@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editor Reveal.js + Editor.js + Supabase</title>
+  <title>Slides Editor</title>
 
   <!-- Vuetify CSS & Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vuetify@3.5.2/dist/vuetify.min.css">
@@ -107,8 +107,8 @@
 
     .reveal .slides section p,
     .reveal .slides section li {
-      font-size: 0.8em;
-      line-height: 1.4 !important;
+      font-size: 1em;
+      line-height: 1 !important;
     }
 
     .reveal .slides section h1,
@@ -922,16 +922,21 @@
                 inlineToolbar: true,
                 config: {
                   fontSizes: [
-                    { size: "0.5em", label: "Pequeño (0.5x)" },
-                    { size: "1em", label: "Normal (1x)" },
-                    { size: "1.6em", label: "Mediano (1.6x)" },
-                    { size: "2em", label: "Grande (2x)" },
-                    { size: "2.5em", label: "Extra Grande (2.5x)" },
-                    { size: "3em", label: "XXL (3x)" },
-                    { size: "3.5em", label: "XXXL (3.5x)" },
-                    { size: "4em", label: "Gigante (4x)" },
+                    { size: "0.25em", label: "0.25em" },
+                    { size: "0.5em", label: "0.5em" },
+                    { size: "0.8em", label: "0.8em" },
+                    { size: "1em", label: "1em" },
+                    { size: "1.5em", label: "1.5em" },
+                    { size: "1.8em", label: "1.8em" },
+                    { size: "2em", label: "2em" },
+                    { size: "2.5em", label: "2.5em" },
+                    { size: "2.8em", label: "2.8em" },
+                    { size: "3em", label: "3em" },
+                    { size: "3.5em", label: "3.5em" },
+                    { size: "3.8em", label: "3.8em" },
+                    { size: "4em", label: "4em" },
                   ],
-                  defaultSize: "1em",
+                  // defaultSize: "1em",
                 },
               },
 
@@ -997,6 +1002,23 @@
                     fontSize: {
                       class: FontSizeTool,
                       inlineToolbar: true,
+                      config: {
+                        fontSizes: [
+                          { size: "0.25em", label: "" },
+                          { size: "0.5em", label: "" },
+                          { size: "0.8em", label: "" },
+                          { size: "1em", label: "" },
+                          { size: "1.5em", label: "" },
+                          { size: "1.8em", label: "" },
+                          { size: "2em", label: "" },
+                          { size: "2.5em", label: "" },
+                          { size: "2.8em", label: "" },
+                          { size: "3em", label: "" },
+                          { size: "3.5em", label: "" },
+                          { size: "3.8em", label: "" },
+                          { size: "4em", label: "" },
+                        ],
+                      },
                     },
 
 
@@ -1021,6 +1043,8 @@
                         customPicker: true
                       }
                     },
+
+
                     inlineCode: { class: InlineCode },
 
                     image: {
@@ -1056,18 +1080,21 @@
               list: { class: NestedList, inlineToolbar: true },
               quote: { class: Quote, inlineToolbar: true, tunes: ['alignmentTune'] },
               Marker: {
-                class: window.ColorPlugin,
+                class: window.ColorPlugin.default || window.ColorPlugin,
                 config: {
                   colorCollections: ['#FFF066', '#A0FE00', '#00E5FF', '#FFB74D', '#FF80AB'],
+                  colors: ['#E53935', '#1E88E5', '#43A047', '#FB8C00', '#8E24AA', '#000000', '#FFFFFF'],
                   type: 'marker',
                   customPicker: true
                 }
               },
 
               TextColor: {
-                class: window.ColorPlugin,
+                class: window.ColorPlugin.default || window.ColorPlugin,
                 config: {
                   colorCollections: ['#E53935', '#1E88E5', '#43A047', '#FB8C00', '#8E24AA'],
+                  colors: ['#E53935', '#1E88E5', '#43A047', '#FB8C00', '#8E24AA', '#000000', '#FFFFFF'],
+
                   type: 'text',
                   customPicker: true
                 }
