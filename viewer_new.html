@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presentación</title>
+    <title>Slide Deck</title>
 
     <!-- Reveal.js CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
@@ -132,7 +132,7 @@
 
     <div class="reveal" id="reveal-deck">
         <div class="slides" id="slides-container">
-            <section>Cargando presentación...</section>
+            <section>Loading Slide Deck...</section>
         </div>
     </div>
 
@@ -244,7 +244,7 @@
             const title = urlParams.get('title');
 
             if (!title) {
-                document.getElementById('slides-container').innerHTML = '<section>⚠️ No se especificó el título en la URL.</section>';
+                document.getElementById('slides-container').innerHTML = '<section>⚠️ Slide Deck not specified.</section>';
                 return;
             }
 
@@ -255,7 +255,7 @@
                 .single();
 
             if (error || !data) {
-                document.getElementById('slides-container').innerHTML = '<section>⚠️ Presentación no encontrada.</section>';
+                document.getElementById('slides-container').innerHTML = '<section>⚠️ Slide Deck not found.</section>';
                 return;
             }
 
