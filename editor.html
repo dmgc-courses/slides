@@ -32,7 +32,22 @@
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/raw@latest"></script>
 
   <style>
-    .reveal-container {
+    /* Barra principal estilizada */
+    .v-app-bar {
+      background: rgba(30, 30, 30, 0.75) !important;
+      backdrop-filter: blur(12px) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* Toolbars flotantes estilo isla */
+    .v-toolbar {
+      background: rgba(255, 255, 255, 0.03) !important;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 12px !important;
+    }
+
+    s .reveal-container {
       width: 100%;
       height: 520px;
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -298,6 +313,27 @@
     .color-picker__dropdown {
       z-index: 9999 !important;
     }
+
+    /* Transiciones globales suaves */
+    .v-card,
+    .v-btn {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    .v-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Efecto Focus en las columnas del editor */
+    .editorjs-container {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .editorjs-container:focus-within {
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.2) !important;
+    }
   </style>
 </head>
 
@@ -399,72 +435,119 @@
       template: `
       <v-app>
         <!-- Header Principal -->
-        <v-app-bar color="surface-variant" density="compact" elevation="2">
-          <v-app-bar-title class="font-weight-bold d-flex align-center text-subtitle-1">
-            <v-icon icon="mdi-presentation-play" class="mr-2" color="black"></v-icon>
-            Slides
-          </v-app-bar-title>
+        <!-- Header Principal -->
+<!-- Header Principal -->
+<v-app-bar color="surface-variant" density="compact" elevation="2">
+  <v-app-bar-title class="font-weight-bold d-flex align-center text-subtitle-1" style="flex: initial; max-width: none;">
+    <v-icon icon="mdi-presentation-play" class="mr-2" color="black"></v-icon>
+    Slides Editor
+  </v-app-bar-title>
+              <v-spacer></v-spacer>
 
-          <!-- Abrir Presentación -->
-          <v-select
-            v-model="selectedPresentationId"
-            :items="presentacionesFiltradas"
-            item-title="title"
-            item-value="id"
-            placeholder="Abrir guardada..."
-            density="compact"
-            variant="solo-filled"
-            hide-details
-            class="mx-2"
-            style="max-width: 220px;"
-            prepend-inner-icon="mdi-folder-open"
-            @update:model-value="cargarPresentacionSeleccionada"
-            :loading="cargandoLista"
-          ></v-select>
+              
 
-          <!-- Campo Curso / Carpeta -->
-          <v-combobox
-            v-model="currentCourse"
-            :items="listaCursos"
-            placeholder="Curso / Carpeta"
-            density="compact"
-            variant="solo-filled"
-            hide-details
-            class="mx-2"
-            style="max-width: 200px;"
-            prepend-inner-icon="mdi-folder-account"
-            @update:model-value="selectedPresentationId = null"
-          ></v-combobox>
+   <!-- 📂 Menú desplegable por Carpeta y Documentos en Hover -->
+  <v-menu :close-on-content-click="false" location="bottom">
+    <template v-slot:activator="{ props }">
+      <v-btn 
+        color="black" 
+        variant="tonal" 
+        density="compact" 
+        icon="mdi-folder-open" 
+        title="Open File"
+        class="mx-1"
+        v-bind="props"
+      ></v-btn>
+    </template>
+    <v-list density="compact" width="260">
+      <v-list-subheader class="font-weight-bold">CARPETAS DE CURSOS</v-list-subheader>
+      
+      <v-menu 
+        v-for="curso in listaCursos" 
+        :key="curso" 
+        open-on-hover 
+        location="end" 
+        density="compact"
+      >
+        <template v-slot:activator="{ props }">
+          <v-list-item v-bind="props" prepend-icon="mdi-folder" append-icon="mdi-chevron-right">
+            <v-list-item-title>{{ curso }}</v-list-item-title>
+          </v-list-item>
+        </template>
 
-          <!-- Nombre de la Presentación -->
-          <v-text-field
-            v-model="presentationTitle"
-            placeholder="Nombre del archivo"
-            density="compact"
-            variant="solo-filled"
-            hide-details
-            class="title-input mx-4"
-            prepend-inner-icon="mdi-file-document-edit"
-          ></v-text-field>
+        <v-list density="compact" width="280">
+          <v-list-subheader>DOCUMENTOS</v-list-subheader>
+          <template v-if="obtenerDocumentosPorCurso(curso).length > 0">
+            <v-list-item 
+              v-for="doc in obtenerDocumentosPorCurso(curso)" 
+              :key="doc.id" 
+              @click="cargarPresentacionSeleccionada(doc.id)"
+              prepend-icon="mdi-file-document-outline"
+            >
+              <v-list-item-title>{{ doc.title }}</v-list-item-title>
+            </v-list-item>
+          </template>
+          <v-list-item v-else>
+            <v-list-item-title class="text-grey text-caption">Sin documentos en esta carpeta</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </v-list>
+  </v-menu>
+  
+<div class="mx-3 d-flex align-center text-body-2">
+  <v-icon icon="mdi-file-edit" size="small" class="mr-1 text-info"></v-icon>
+  <strong class="text-white text-truncate mr-2">{{ presentationTitle }}</strong>
+  
+  <!-- Badge de Estado -->
+  <v-chip 
+    :color="currentId ? 'success' : 'warning'" 
+    size="x-small" 
+    variant="flat" 
+    class="font-weight-bold"
+  >
+    {{ currentId ? 'Saved' : 'Draft' }}
+  </v-chip>
+</div>
 
-          <v-spacer></v-spacer>
+  <!-- ➡️ Empuja todo lo demás hacia la derecha -->
+  <v-spacer></v-spacer>
 
-          <v-btn color="success" variant="elevated" prepend-icon="mdi-cloud-upload" @click="guardarPresentacion" :loading="cargandoGuardado">
-            Guardar
-          </v-btn>
+  <!-- 💾 Botones de acción reducidos a solo iconos a la derecha -->
+  <div class="d-flex align-center ga-1 mr-2">
+    <v-btn 
+      color="success" 
+      variant="elevated" 
+      icon="mdi-content-save" 
+      density="compact"
+      title="Save"
+      @click="guardarPresentacion" 
+      :loading="cargandoGuardado"
+    ></v-btn>
 
-          <v-btn 
-            v-if="currentId"
-            color="error" 
-            variant="elevated" 
-            prepend-icon="mdi-delete" 
-            class="ml-2"
-            @click="abrirDialogoEliminar" 
-            
-          >
-            Eliminar
-          </v-btn>
-        </v-app-bar>
+    <v-btn 
+      color="info" 
+      variant="elevated" 
+      icon="mdi-content-copy" 
+      density="compact"
+      title="Save As..."
+      class="ml-1" 
+      @click="abrirDialogoGuardarComo" 
+      :loading="cargandoGuardado"
+    ></v-btn>
+
+    <v-btn 
+      v-if="currentId"
+      color="error" 
+      variant="elevated" 
+      icon="mdi-delete" 
+      density="compact"
+      title="Delete"
+      class="ml-1"
+      @click="abrirDialogoEliminar" 
+    ></v-btn>
+  </div>
+</v-app-bar>
 
         <v-main class="bg-grey-darken-4">
           <v-container fluid class="fill-height align-start pa-4 d-flex flex-column">
@@ -530,21 +613,30 @@
 
               <!-- Personalización de Tema / Estilos y Extras -->
               <div class="d-flex align-center ga-2" style="overflow-x: auto;">
-                <v-select
-                  v-model="selectedFontPair"
-                  :items="fontPairs"
-                  item-title="label"
-                  item-value="id"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  style="min-width: 150px; max-width: 170px;"
-                  @update:model-value="aplicarTipografia"
-                ></v-select>
+                <!-- 🔤 Menú desplegable de Tipografía basado en Icono -->
+<v-menu offset-y :close-on-content-click="true">
+  <template v-slot:activator="{ props }">
+    <v-btn color="white" icon="mdi-format-font" variant="tonal" density="compact" title="Font Selection" v-bind="props"></v-btn>
+  </template>
+  <v-card width="220" class="pa-2">
+    
+    <v-list density="compact">
+      <v-list-item
+        v-for="pair in fontPairs"
+        :key="pair.id"
+        :active="selectedFontPair === pair.id"
+        @click="selectedFontPair = pair.id; aplicarTipografia()"
+        class="cursor-pointer"
+      >
+        <v-list-item-title>{{ pair.label }}</v-list-item-title>
+      </v-list-item>
+    </v-list>
+  </v-card>
+</v-menu>
 
                 <v-menu offset-y :close-on-content-click="false">
                   <template v-slot:activator="{ props }">
-                    <v-btn color="purple" icon="mdi-palette" variant="tonal" density="compact" title="Cambiar Gradiente" v-bind="props"></v-btn>
+                    <v-btn color="white" icon="mdi-palette" variant="tonal" density="compact" title="Cambiar Gradiente" v-bind="props"></v-btn>
                   </template>
                   <v-card width="300" class="pa-3">
                     <v-card-title class="text-subtitle-2 pa-0 mb-2">Selecciona un Gradiente</v-card-title>
@@ -567,12 +659,13 @@
                   </v-card>
                 </v-menu>
 
-                <v-btn color="deep-purple-accent-2" icon="mdi-forum" variant="tonal" density="compact" title="Configurar Foro de Discusión" @click="abrirModalForo"></v-btn>
-                <v-btn color="primary" icon="mdi-open-in-new" variant="tonal" density="compact" title="Incrustar Foro en Fondo" @click="agregarFondoForo"></v-btn>
-                <v-btn color="light-green" icon="mdi-eye" variant="tonal" density="compact" title="Abrir Visor" @click="abrirVisorNuevaPestana"></v-btn>
+                <v-btn color="white" icon="mdi-forum" variant="tonal" density="compact" title="Configurar Foro de Discusión" @click="abrirModalForo"></v-btn>
+                <v-btn color="white" icon="mdi-web-plus" variant="tonal" density="compact" title="Embed Wepage" @click="agregarFondoForo"></v-btn>
+
+                <v-btn color="white" icon="mdi-open-in-new" variant="tonal" density="compact" title="Abrir Visor" @click="abrirVisorNuevaPestana"></v-btn>
                 
                 <v-btn 
-                  color="cyan" 
+                  color="white" 
                   icon="mdi-code-tags" 
                   variant="tonal" 
                   density="compact" 
@@ -580,6 +673,15 @@
                   :disabled="!presentationTitle"
                   @click="abrirDialogoEmbed"
                 ></v-btn>
+
+                <v-btn 
+  color="white" 
+  icon="mdi-file-pdf-box" 
+  variant="tonal" 
+  density="compact" 
+  title="Exportar a PDF" 
+  @click="exportarPDF"
+></v-btn>
               </div>
             </v-toolbar>
 
@@ -608,14 +710,63 @@
                 <v-card-actions>
                   <v-spacer></v-spacer>
                   <v-btn color="grey-lighten-1" variant="text" @click="dialogEmbed = false">Cerrar</v-btn>
-                  <v-btn color="cyan" variant="elevated" prepend-icon="mdi-content-copy" @click="copiarIframe">
+                  <v-btn color="white" variant="elevated" prepend-icon="mdi-content-copy" @click="copiarIframe">
                     {{ textoBotonCopiar }}
                   </v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
 
-            <!-- Diálogo de Confirmación para Eliminar -->
+            
+
+
+<!-- Diálogo para Guardar Como (Actualizado con selector de carpeta) -->
+<v-dialog v-model="dialogGuardarComo" max-width="450">
+  <v-card>
+    <v-card-title class="text-h6 font-weight-bold d-flex align-center pt-4">
+      <v-icon icon="mdi-content-copy" class="mr-2" color="info"></v-icon>
+      Guardar Presentación Como...
+    </v-card-title>
+    
+    <v-card-text class="py-3">
+      <p class="text-body-2 mb-3">Introduce un nuevo nombre y selecciona la carpeta de destino para la copia:</p>
+      
+      <!-- Campo de Nombre -->
+      <v-text-field
+        v-model="nuevoTituloCopia"
+        label="Nuevo nombre"
+        variant="outlined"
+        density="compact"
+        class="mb-3"
+        hide-details
+      ></v-text-field>
+
+      <!-- 📂 Selector de Carpeta dentro del Modal -->
+      <v-combobox
+        v-model="cursoCopia"
+        :items="listaCursos"
+        label="Carpeta / Curso de destino"
+        variant="outlined"
+        density="compact"
+        hide-details
+        prepend-inner-icon="mdi-folder-account"
+      ></v-combobox>
+    </v-card-text>
+
+    <v-card-actions class="px-4 pb-4">
+      <v-spacer></v-spacer>
+      <v-btn color="grey-darken-1" variant="text" @click="dialogGuardarComo = false" :disabled="cargandoGuardado">
+        Cancelar
+      </v-btn>
+      <v-btn color="info" variant="elevated" @click="confirmarGuardarComo" :loading="cargandoGuardado">
+        Guardar copia
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+
+
+<!-- Diálogo de Confirmación para Eliminar -->
 <v-dialog v-model="dialogEliminar" max-width="450" persistent>
   <v-card>
     <v-card-title class="text-h6 font-weight-bold d-flex align-center text-error pt-4">
@@ -682,16 +833,17 @@
               </div>
             </div>
 
+            
             <!-- Grid Editor / Preview (Expandido dinámicamente) -->
             <v-row class="flex-grow-1 w-100 ma-0">
               
               <!-- Columna Editor.js -->
               <v-col cols="12" md="6" class="pl-0 pb-0 pt-0 pr-md-2">
-                <v-card class="pa-3 fill-height d-flex flex-column" elevation="3">
-                  <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center text-primary">
-                    <v-icon icon="mdi-square-edit-outline" class="mr-1"></v-icon>
-                    Editando Diapositiva {{ activeSlideIndex + 1 }}
-                  </div>
+              <v-card class="pa-3 fill-height d-flex flex-column" elevation="3">
+  <div class="text-subtitle-2 font-weight-bold mb-2 d-flex align-center text-white">
+    <v-icon icon="mdi-square-edit-outline" class="mr-1"></v-icon>
+    Editing Slide {{ activeSlideIndex + 1 }}
+  </div>
                   <!-- Contenedor donde se monta Editor.js -->
                   <div id="editorjs-holder" class="editorjs-container flex-grow-1"></div>
                 </v-card>
@@ -702,16 +854,29 @@
                 <v-card class="pa-4 fill-height d-flex flex-column" elevation="3">
                   <v-card-title class="text-subtitle-1 pa-0 mb-2 d-flex align-center justify-space-between">
                     <div class="d-flex align-center">
-                      <v-icon icon="mdi-eye" class="mr-2"></v-icon> Vista Previa
+                      <v-icon icon="mdi-eye" class="mr-2"></v-icon> Preview
                     </div>
+                    <spacer></v-spacer>
+
+
+
                     <v-btn 
                       icon="mdi-refresh" 
                       size="small" 
-                      color="primary" 
+                      color="white" 
                       variant="tonal" 
-                      title="Actualizar Vista Previa" 
+                      title="Update Preview" 
                       @click="refrescarPreview"
                     ></v-btn>
+                                        <v-btn 
+  icon="mdi-fullscreen" 
+  size="small" 
+  color="white" 
+  variant="tonal" 
+  title="Fullscreen Preview" 
+  @click="alternarPantallaCompleta"
+></v-btn>
+
                   </v-card-title>
 
                   <div class="reveal-container flex-grow-1">
@@ -760,7 +925,7 @@
         };
 
         const currentId = ref(null);
-        const presentationTitle = ref('Nueva Presentación Editor.js');
+        const presentationTitle = ref('Untitled Document');
         const currentCourse = ref('General');
         const listaCursos = ref(['General', 'Diseño Web', 'Base de Datos', 'Audiovisual']);
 
@@ -828,7 +993,7 @@
         };
 
         const agregarFondoForo = () => {
-          const url = prompt("Introduce la URL del foro de discusión:");
+          const url = prompt("Type the website URL:");
           if (!url) return;
 
           const htmlRaw = `<section data-background-iframe="${url.trim()}" data-background-interactive>\n</section>`;
@@ -1196,6 +1361,12 @@
                 aplicarEstilo();
                 aplicarTipografia();
                 revealInstance.slide(activeSlideIndex.value, 0);
+                if (window.location.search.includes('print-pdf')) {
+                  // Un pequeño delay para asegurar que los estilos e imágenes carguen
+                  setTimeout(() => {
+                    window.print();
+                  }, 1000);
+                }
               });
             });
           } else {
@@ -1263,6 +1434,11 @@
             slides.value.splice(activeSlideIndex.value + 1, 0, slideActual);
             activeSlideIndex.value++;
           }
+        };
+
+        // Función para obtener los documentos de una carpeta específica en el menú flotante
+        const obtenerDocumentosPorCurso = (cursoNombre) => {
+          return listaPresentaciones.value.filter(p => p.course === cursoNombre);
         };
 
         const guardarPresentacion = async () => {
@@ -1407,6 +1583,74 @@
           actualizarReveal();
         };
 
+        const dialogGuardarComo = ref(false);
+        const nuevoTituloCopia = ref('');
+        const cursoCopia = ref('General');
+
+
+        // 2. Actualiza la función para que herede la carpeta actual por defecto al abrirse
+        const abrirDialogoGuardarComo = () => {
+          if (!presentationTitle.value.trim()) {
+            mostrarMensaje('Asigna un nombre a la presentación primero.', 'warning');
+            return;
+          }
+          nuevoTituloCopia.value = `${presentationTitle.value} (Copia)`;
+          cursoCopia.value = currentCourse.value; // Hereda la carpeta actual
+          dialogGuardarComo.value = true;
+        };
+
+        // 3. Actualiza la función que ejecuta el guardado tomando en cuenta la carpeta elegida en el modal
+        const confirmarGuardarComo = async () => {
+          if (!nuevoTituloCopia.value.trim()) {
+            mostrarMensaje('Por favor introduce un nombre válido para la copia.', 'warning');
+            return;
+          }
+
+          cargandoGuardado.value = true;
+          try {
+            if (editorInstance) {
+              slides.value[activeSlideIndex.value] = await editorInstance.save();
+            }
+
+            const themeConfig = {
+              gradient: gradientes.value[selectedGradient.value].value,
+              fontPair: selectedFontPair.value
+            };
+
+            // Asegurar limpiar el valor de la carpeta si es un objeto del combobox
+            const carpetaSeleccionada = typeof cursoCopia.value === 'object' ? cursoCopia.value.title : cursoCopia.value;
+
+            const payload = {
+              title: nuevoTituloCopia.value.trim(),
+              course: carpetaSeleccionada.trim() || 'General',
+              content_json: slides.value,
+              theme_config: themeConfig,
+              is_published: true,
+              updated_at: new Date()
+            };
+
+            const { data, error } = await supabaseClient
+              .from('presentations')
+              .insert([payload])
+              .select();
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+              currentId.value = data[0].id;
+              presentationTitle.value = data[0].title;
+              currentCourse.value = data[0].course; // Actualiza la carpeta activa en la interfaz
+            }
+
+            dialogGuardarComo.value = false;
+            mostrarMensaje(`¡Copia guardada como "${presentationTitle.value}" en "${currentCourse.value}"!`);
+            await obtenerPresentaciones();
+          } catch (err) {
+            mostrarMensaje('Error al guardar la copia: ' + err.message, 'error');
+          } finally {
+            cargandoGuardado.value = false;
+          }
+        };
         const eliminarPresentacion = async () => {
           if (!currentId.value) return;
           if (!confirm(`¿Eliminar la presentación "${presentationTitle.value}"?`)) return;
@@ -1429,6 +1673,17 @@
             mostrarMensaje('Error al eliminar: ' + err.message);
           } finally {
             cargandoEliminar.value = false;
+          }
+        };
+
+        const alternarPantallaCompleta = () => {
+          const container = document.querySelector('.reveal-container');
+          if (!document.fullscreenElement) {
+            container.requestFullscreen().catch(err => {
+              mostrarMensaje('Error al activar pantalla completa: ' + err.message, 'error');
+            });
+          } else {
+            document.exitFullscreen();
           }
         };
 
@@ -1479,6 +1734,17 @@
           }
         };
 
+        const exportarPDF = () => {
+          if (!presentationTitle.value.trim()) {
+            mostrarMensaje('Asigna un nombre al proyecto antes de exportar.', 'warning');
+            return;
+          }
+
+          // Abrir el visor agregando el parámetro ?print-pdf
+          const urlVisorPDF = `viewer_new.html?title=${encodeURIComponent(presentationTitle.value.trim())}&print-pdf`;
+          window.open(urlVisorPDF, '_blank');
+        };
+
         const gradientes = ref([
           { name: 'Verde Esmeralda', value: 'linear-gradient(135deg, #052e16 0%, #14532d 50%, #15803d 100%)' },
           { name: 'Púrpura Neón', value: 'linear-gradient(135deg, #240b36 0%, #c31432 100%)' },
@@ -1518,6 +1784,16 @@
           await obtenerPresentaciones();
           await inicializarEditorJS(slides.value[0]);
           actualizarReveal();
+          window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+              e.preventDefault();
+              if (e.shiftKey) {
+                abrirDialogoGuardarComo();
+              } else {
+                guardarPresentacion();
+              }
+            }
+          });
         });
 
         return {
@@ -1539,14 +1815,18 @@
           selectedFontPair,
           gradientes,
           selectedGradient,
+          obtenerDocumentosPorCurso,
           agregarDiapositiva,
           eliminarDiapositivaActual,
-
           moverDiapositivaIzquierda,
           moverDiapositivaDerecha,
           guardarPresentacion,
           cargarPresentacionSeleccionada,
           currentId,
+          dialogGuardarComo,
+          nuevoTituloCopia,
+          abrirDialogoGuardarComo,
+          confirmarGuardarComo,
           eliminarPresentacion,
           dialogEliminar,
           abrirDialogoEliminar,
@@ -1567,7 +1847,9 @@
           abrirModalForo,
           cerrarModalForo,
           irAlPaso2,
-          confirmarEIncrustarForo
+          confirmarEIncrustarForo,
+          alternarPantallaCompleta,
+          exportarPDF
         };
       }
     };
