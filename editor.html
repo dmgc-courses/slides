@@ -459,8 +459,9 @@
         v-bind="props"
       ></v-btn>
     </template>
+
     <v-list density="compact" width="260">
-      <v-list-subheader class="font-weight-bold">CARPETAS DE CURSOS</v-list-subheader>
+      <v-list-subheader class="font-weight-bold">Course Folders</v-list-subheader>
       
       <v-menu 
         v-for="curso in listaCursos" 
@@ -470,13 +471,13 @@
         density="compact"
       >
         <template v-slot:activator="{ props }">
-          <v-list-item v-bind="props" prepend-icon="mdi-folder" append-icon="mdi-chevron-right">
+          <v-list-item v-bind="props" prepend-icon="mdi-folder" append-icon="mdi-chevron-right" class="cursor-pointer">
             <v-list-item-title>{{ curso }}</v-list-item-title>
           </v-list-item>
         </template>
 
         <v-list density="compact" width="280">
-          <v-list-subheader>DOCUMENTOS</v-list-subheader>
+          <v-list-subheader>DOCUMENTS</v-list-subheader>
           <template v-if="obtenerDocumentosPorCurso(curso).length > 0">
             <v-list-item 
               v-for="doc in obtenerDocumentosPorCurso(curso)" 
@@ -488,7 +489,7 @@
             </v-list-item>
           </template>
           <v-list-item v-else>
-            <v-list-item-title class="text-grey text-caption">Sin documentos en esta carpeta</v-list-item-title>
+            <v-list-item-title class="text-grey text-caption">No documents in this folder</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
