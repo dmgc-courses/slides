@@ -12,7 +12,7 @@
 
     <style>
         /* 1. Reset base */
-        html,
+        /* html,
         body {
             width: 100%;
             height: 100%;
@@ -25,6 +25,40 @@
         .reveal {
             width: 100vw;
             height: 100vh;
+        } */
+
+        /* 1. Reset base y ajuste para la barra superior */
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            /* background: #111; */
+        }
+
+        /* Barra de navegación superior dedicada */
+        #top-nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 98%;
+            height: 3rem;
+            background: transparent;
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: right;            
+            align-items: center;
+            padding: 0 20px;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .reveal {
+            width: 100vw;
+            height: calc(100vh - 50px);
+            margin-top: 50px; /* Evita que la barra tape el contenido de las slides */
         }
 
         /* 2. Tipografía para el cuerpo del texto usando variables CSS */
@@ -130,9 +164,23 @@
 
 <body>
 
+    <!-- Sección dedicada de navegación superior -->
+    <header id="top-nav-bar">
+        <div id="nav-title" style="color: #fff; font-size: 0.95rem; font-weight: 600; font-family: var(--title-font, sans-serif);"></div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span id="slide-counter" style="color: #aaa; font-size: 0.85rem; font-family: monospace;">1 / 1</span>
+            <button id="btn-prev" style="background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: background 0.2s;" title="Anterior">
+                ◀ Prev
+            </button>
+            <button id="btn-next" style="background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: background 0.2s;" title="Siguiente">
+                Next ▶
+            </button>
+        </div>
+    </header>
+
     <div class="reveal" id="reveal-deck">
         <div class="slides" id="slides-container">
-            <section>Loading Slide Deck...</section>
+            <!-- <section>Loading Slide Deck...</section> -->
         </div>
     </div>
 
@@ -306,8 +354,9 @@
             const deck = new Reveal({
                 hash: true,
                 center: true,
-                slideNumber: 'c/t',
-                controlsBackArrows: 'visible',
+                slideNumber: false,
+                // controlsBackArrows: 'visible',
+                controls: false,
                 progress: true,
                 controlsLayout: 'edges',
                 overview: true,
@@ -320,9 +369,35 @@
             });
 
             deck.initialize();
+
+            // --- LÓGICA DE LA BARRA SUPERIOR DE NAVEGACIÓN ---
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            const slideCounter = document.getElementById('slide-counter');
+            // const navTitle = document.getElementById('nav-title');
+
+            // Asignar título de la presentación
+            // navTitle.textContent = data.title || title;
+
+            // Eventos de clic para los botones superiores
+            btnPrev.addEventListener('click', () => deck.prev());
+            btnNext.addEventListener('click', () => deck.next());
+
+            // Función para actualizar el contador de diapositivas en tiempo real
+            function updateSlideInfo() {
+                const indices = deck.getIndices();
+                const totalSlides = deck.getTotalSlides();
+                slideCounter.textContent = `${indices.h + 1} / ${totalSlides}`;
+            }
+
+            // Sincronizar contador al cambiar de slide o al iniciar
+            deck.on('slidechanged', updateSlideInfo);
+            deck.on('ready', updateSlideInfo);
         }
 
         cargarPresentacionPublica();
+
+        
     </script>
 </body>
 
